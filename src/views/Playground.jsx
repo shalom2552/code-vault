@@ -1,0 +1,71 @@
+import { useState } from 'react'
+import CodeEditor from '../components/CodeEditor.jsx'
+import { api } from '../api.js'
+
+export default function Playground() {
+  const DEFAULT = `#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <queue>
+#include <stack>
+#include <cmath>
+#include <sstream>
+#include <numeric>
+using namespace std;
+
+int main() {
+
+  return 0;
+}
+`
+  const [code, setCode] = useState(() => localStorage.getItem('playground-code') || DEFAULT)
+  const [stdin, setStdin] = useState('')
+  const [running, setRunning] = useState(false)
+  const [output, setOutput] = useState(null)
+
+  const saveCode = (val) => { setCode(val); localStorage.setItem('playground-code', val) }
+
+  const handleRun = async () => {
+    setRunning(true)
+    setOutput(null)
+    const out = await api.runPlayground(code, stdin)
+    setOutput(out)
+    setRunning(false)
+  }
+
+  return (
+    <div className="playground">
+      <div className="playground-header">
+        <span className="playground-title">Playground</span>
+        <span className="playground-hint-inline">full file — add functions outside main</span>
+      </div>
+      <div className="playground-code">
+        <CodeEditor value={code} onChange={saveCode} minHeight="100%" />
+      </div>
+      {output && (
+        <div className="run-output playground-output">
+          {output.stderr && <pre className="run-stderr">{output.stderr}</pre>}
+          {output.stdout && <pre className="run-stdout">{output.stdout}</pre>}
+          <div className="exit-code">exit {output.exitCode}</div>
+        </div>
+      )}
+      <div className="playground-footer">
+        <textarea
+          className="stdin-input playground-stdin"
+          placeholder="stdin (optional)"
+          value={stdin}
+          onChange={e => setStdin(e.target.value)}
+          rows={1}
+        />
+        <button className="playground-run-btn" onClick={handleRun} disabled={running}>
+          {running ? '…' : '▶ Run'}
+        </button>
+      </div>
+    </div>
+  )
+}

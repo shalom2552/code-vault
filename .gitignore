@@ -1,6 +1,9 @@
 # Claude Code tooling
 .claude/
 
+# Snippet data (persisted on host, not in git)
+data/
+
 # Logs
 logs
 *.log

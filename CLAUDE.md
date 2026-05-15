@@ -1,52 +1,77 @@
-# Project Context
+# CppVault
 
-Personal app. Runs in Docker. Files mounted from `~/docker/myapp` on host — edit files directly, Docker picks up changes via Vite HMR.
-
-Accessed from Android via Tailscale (private network, no public exposure).
+Personal C++ snippet manager + code runner. Runs in Docker, accessed from Android via Tailscale.
 
 ## Stack
 
-- React 19 + Vite (frontend)
-- Backend: not yet — will be added to this same container (e.g. Express/Hono serving the Vite build)
-- No routing lib yet, no state lib yet — add when actually needed
+- React 19 + Vite 8 (frontend)
+- Express 5 wrapping Vite in middleware mode — one process, one port (5174), HMR in dev
+- vite-plugin-pwa — PWA + service worker (devOptions disabled to avoid caching issues)
+- highlight.js — read-only C++ syntax highlighting (detail view)
+- CodeMirror 6 via @uiw/react-codemirror — editor with auto-indent, bracket matching, auto-close braces
+- No routing lib, no state lib — plain useState/useEffect
 
-## Goals
+## Architecture
 
-- PWA installable on Android Chrome (manifest + service worker)
-- Minimal, clean codebase — no boilerplate, no premature abstractions
-- Build features on the fly as needed
-- Backend will live in same container — one repo, one process (or Vite proxies to same Node process)
+```
+src/
+  App.jsx               # thin shell: tab + view state, nav
+  App.css               # all styles
+  api.js                # fetch wrappers (api.listSnippets, api.runSnippet, etc.)
+  components/
+    CodeBlock.jsx       # highlight.js display-only
+    CodeEditor.jsx      # CodeMirror 6 reusable editor
+  views/
+    ListView.jsx        # snippet list, search, tag filter
+    DetailView.jsx      # detail + run panel
+    EditorView.jsx      # create/edit with CodeEditor
+    Playground.jsx      # scratch pad, wraps code in main() server-side
+server/
+  index.js              # Express + Vite middleware, prod serves dist/
+  routes.js             # all API handlers
+data/                   # bind-mounted volume — UUID dirs with meta.json + .cpp files
+```
 
-## PWA Status
+## API
 
-- `index.html`: manifest linked, theme-color set, mobile-web-app-capable
-- `public/manifest.webmanifest`: needs writing (permission issue blocked)
-- `public/sw.js`: needs writing (permission issue blocked)
-- Service worker registration: goes in `src/main.jsx`
+| Method | Path | Action |
+|--------|------|--------|
+| GET | /api/snippets | list all |
+| GET | /api/snippets/:id | detail + file contents |
+| POST | /api/snippets | create |
+| PUT | /api/snippets/:id | update |
+| DELETE | /api/snippets/:id | rm -rf |
+| POST | /api/snippets/:id/run | g++ compile + exec |
+| POST | /api/playground/run | compile code wrapped in main() + std headers |
 
-To unblock: `sudo chown -R marshall:marshall /home/marshall/docker/myapp/src /home/marshall/docker/myapp/public`
-Then run existing root-owned files can be overwritten.
+Storage: `data/<uuid>/meta.json` + raw `.cpp`/`.h` files. No database.
 
-## File Permission Issue
-
-Docker created files as root. Root dir + `src/` + `public/` dirs are now marshall-owned. But existing *files* inside `src/` are still root-owned — can't overwrite without sudo. New files in those dirs can be created fine.
-
-## Conventions
-
-- No comments unless WHY is non-obvious
-- No premature abstraction — three similar lines beat a helper
-- Explain changes when making them — don't just silently rewrite files
-- CSS: plain CSS, no framework yet (add Tailwind only if user asks)
-- No TypeScript yet — plain JSX
-
-## Running
+## Dev
 
 ```bash
 cd ~/docker/myapp && npm run dev
 ```
 
-Vite default port: 5173. Tailscale serve proxies it with HTTPS:
+Single process — Express on 5174, Vite HMR active. Restart server for backend changes.
 
+Tailscale HTTPS:
 - **App URL:** `https://cachyos-nvme.tail5500ce.ts.net`
-- Run: `tailscale serve --bg http://localhost:5173`
+- Enable: `tailscale serve --bg http://localhost:5174`
 - Disable: `tailscale serve --https=443 off`
+
+## Docker
+
+```bash
+docker compose up --build   # prod build inside container
+```
+
+`./data:/app/data` bind mount — same files, no copy. Data at `~/docker/myapp/data/` on host.
+Container needs g++: `apk add --no-cache g++ make` (already in Dockerfile).
+
+## Conventions
+
+- No comments unless WHY is non-obvious
+- No premature abstraction
+- Explain changes before making them — no silent rewrites
+- Plain CSS, no framework
+- No TypeScript

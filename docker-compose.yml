@@ -1,0 +1,10 @@
+services:
+  cppvault:
+    build: .
+    ports:
+      - "5174:5174"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
