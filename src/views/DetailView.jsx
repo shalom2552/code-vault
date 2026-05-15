@@ -45,48 +45,49 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
         </div>
       </div>
 
-      {snippet.tags.length > 0 && (
-        <div className="detail-tags">
-          {snippet.tags.map(t => <span key={t} className="tag-chip">{t}</span>)}
-        </div>
-      )}
+      <div className="detail-scroll">
+        {snippet.tags.length > 0 && (
+          <div className="detail-tags">
+            {snippet.tags.map(t => <span key={t} className="tag-chip">{t}</span>)}
+          </div>
+        )}
 
-      {snippet.notes && <p className="detail-notes">{snippet.notes}</p>}
+        {snippet.notes && <p className="detail-notes">{snippet.notes}</p>}
 
-      {snippet.files.length > 1 && (
-        <div className="file-tabs">
-          {snippet.files.map((f, i) => (
-            <button
-              key={f.name}
-              className={`file-tab${activeFile === i ? ' active' : ''}`}
-              onClick={() => setActiveFile(i)}
-            >{f.name}</button>
-          ))}
-        </div>
-      )}
+        {snippet.files.length > 1 && (
+          <div className="file-tabs">
+            {snippet.files.map((f, i) => (
+              <button
+                key={f.name}
+                className={`file-tab${activeFile === i ? ' active' : ''}`}
+                onClick={() => setActiveFile(i)}
+              >{f.name}</button>
+            ))}
+          </div>
+        )}
 
-      <CodeBlock code={file?.content || ''} filename={snippet.files.length === 1 ? file?.name : null} />
+        <CodeBlock code={file?.content || ''} filename={snippet.files.length === 1 ? file?.name : null} />
 
-      <div className="run-section">
-        <div className="run-panel">
-          <textarea
-            className="stdin-input"
-            placeholder="stdin (optional)"
-            value={stdin}
-            onChange={e => setStdin(e.target.value)}
-            rows={2}
-          />
-          <button className="run-btn" onClick={handleRun} disabled={running}>
-            {running ? 'Running…' : '▶ Run'}
-          </button>
-          {runOutput && (
-            <div className="run-output">
-              {runOutput.stderr && <pre className="run-stderr">{runOutput.stderr}</pre>}
-              {runOutput.stdout && <pre className="run-stdout">{runOutput.stdout}</pre>}
-              <div className="exit-code">exit {runOutput.exitCode}</div>
-            </div>
-          )}
-        </div>
+        {runOutput && (
+          <div className="run-output">
+            {runOutput.stderr && <pre className="run-stderr">{runOutput.stderr}</pre>}
+            {runOutput.stdout && <pre className="run-stdout">{runOutput.stdout}</pre>}
+            <div className="exit-code">exit {runOutput.exitCode}</div>
+          </div>
+        )}
+      </div>
+
+      <div className="run-footer">
+        <textarea
+          className="stdin-input playground-stdin"
+          placeholder="stdin (optional)"
+          value={stdin}
+          onChange={e => setStdin(e.target.value)}
+          rows={1}
+        />
+        <button className="playground-run-btn" onClick={handleRun} disabled={running}>
+          {running ? '…' : '▶ Run'}
+        </button>
       </div>
     </div>
   )
