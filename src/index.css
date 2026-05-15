@@ -1,0 +1,10 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Outfit', system-ui, sans-serif;
+  background: #111;
+  color: #f0f0f0;
+  min-height: 100svh;
+  -webkit-font-smoothing: antialiased;
+}
