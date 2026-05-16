@@ -2,8 +2,7 @@ import { useState } from 'react'
 import CodeEditor from '../components/CodeEditor.jsx'
 import { api } from '../api.js'
 
-export default function Playground() {
-  const DEFAULT = `#include <iostream>
+const DEFAULT = `#include <iostream>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -23,12 +22,20 @@ int main() {
   return 0;
 }
 `
+
+export default function Playground() {
   const [code, setCode] = useState(() => localStorage.getItem('playground-code') || DEFAULT)
   const [stdin, setStdin] = useState('')
   const [running, setRunning] = useState(false)
   const [output, setOutput] = useState(null)
 
   const saveCode = (val) => { setCode(val); localStorage.setItem('playground-code', val) }
+
+  const handleReset = () => {
+    if (code !== DEFAULT && !confirm('Reset to blank template?')) return
+    saveCode(DEFAULT)
+    setOutput(null)
+  }
 
   const handleRun = async () => {
     setRunning(true)
@@ -41,8 +48,11 @@ int main() {
   return (
     <div className="playground">
       <div className="playground-header">
-        <span className="playground-title">Playground</span>
-        <span className="playground-hint-inline">full file — add functions outside main</span>
+        <div className="playground-header-left">
+          <span className="playground-title">Playground</span>
+          <span className="playground-hint-inline">C++ scratch pad</span>
+        </div>
+        <button className="playground-reset-btn" onClick={handleReset}>Reset</button>
       </div>
       <div className="playground-code">
         <CodeEditor value={code} onChange={saveCode} minHeight="100%" />
