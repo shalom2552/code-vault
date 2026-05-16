@@ -572,6 +572,11 @@
 .cm-editor.cm-focused { outline: none; }
 .file-editor .cm-editor {
   border-radius: 0;
+  height: auto !important;
+}
+.file-editor .cm-editor .cm-scroller {
+  overflow: visible !important;
+  min-height: 120px;
 }
 .playground-code .cm-editor {
   height: 100%;
