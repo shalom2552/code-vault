@@ -94,6 +94,7 @@ export default function snippetRoutes(DATA_DIR) {
       let stdout = '', runErr = ''
       child.stdout.on('data', d => stdout += d)
       child.stderr.on('data', d => runErr += d)
+      child.stdin.on('error', () => {})
       if (stdin) child.stdin.write(stdin)
       child.stdin.end()
 
@@ -135,6 +136,7 @@ export default function snippetRoutes(DATA_DIR) {
       let stdout = '', runErr = ''
       child.stdout.on('data', d => stdout += d)
       child.stderr.on('data', d => runErr += d)
+      child.stdin.on('error', () => {})
       if (stdin) child.stdin.write(stdin)
       child.stdin.end()
 
