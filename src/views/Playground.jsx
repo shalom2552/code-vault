@@ -2,22 +2,7 @@ import { useState } from 'react'
 import CodeEditor from '../components/CodeEditor.jsx'
 import { api } from '../api.js'
 
-const DEFAULT = `#include <iostream>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <queue>
-#include <stack>
-#include <cmath>
-#include <sstream>
-#include <numeric>
-using namespace std;
-
-int main() {
+const DEFAULT = `int main() {
 
   return 0;
 }

@@ -118,9 +118,26 @@ export default function snippetRoutes(DATA_DIR) {
     const srcFile = `${tmpDir}/main.cpp`
     const outBin = `${tmpDir}/out`
 
+    const wrapped = `#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <queue>
+#include <stack>
+#include <cmath>
+#include <sstream>
+#include <numeric>
+using namespace std;
+
+${code}`
+
     try {
       await fs.mkdir(tmpDir, { recursive: true })
-      await fs.writeFile(srcFile, code)
+      await fs.writeFile(srcFile, wrapped)
     } catch (e) {
       return res.json({ stdout: '', stderr: e.message, exitCode: 1 })
     }
