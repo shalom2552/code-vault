@@ -87,7 +87,7 @@ export default function EditorView({ snippetId, onSave, onBack }) {
               <CodeEditor
                 value={f.content}
                 onChange={val => updateFile(f._key, 'content', val)}
-                minHeight="0"
+                autoHeight
               />
             </div>
           ))}
