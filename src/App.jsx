@@ -26,11 +26,20 @@ export default function App() {
   const [tab, setTab] = useState('snippets')
   const [view, setView] = useState('list')
   const [selectedId, setSelectedId] = useState(null)
+  const [playgroundSeed, setPlaygroundSeed] = useState(null)
 
-  const goDetail = (id) => { setSelectedId(id); setView('detail') }
-  const goList = () => setView('list')
+  const goDetail = (id) => { setSelectedId(id); setView('detail'); setPlaygroundSeed(null) }
+  const goList = () => { setView('list'); setPlaygroundSeed(null) }
   const goCreate = () => { setSelectedId(null); setView('create') }
   const goEdit = () => setView('edit')
+  const goPlayground = () => { setTab('playground'); setPlaygroundSeed(null) }
+
+  const goCreateFromPlayground = (code, language) => {
+    setPlaygroundSeed({ code, language })
+    setSelectedId(null)
+    setTab('snippets')
+    setView('create')
+  }
 
   const inSnippetDetail = tab === 'snippets' && view !== 'list'
 
@@ -41,11 +50,17 @@ export default function App() {
           <>
             {view === 'list' && <ListView onSelect={goDetail} onCreate={goCreate} />}
             {view === 'detail' && <DetailView id={selectedId} onBack={goList} onEdit={goEdit} onDeleted={goList} />}
-            {view === 'create' && <EditorView onSave={goDetail} onBack={goList} />}
+            {view === 'create' && (
+              <EditorView
+                initialData={playgroundSeed}
+                onSave={goDetail}
+                onBack={playgroundSeed ? goPlayground : goList}
+              />
+            )}
             {view === 'edit' && <EditorView snippetId={selectedId} onSave={goDetail} onBack={() => setView('detail')} />}
           </>
         )}
-        {tab === 'playground' && <Playground />}
+        {tab === 'playground' && <Playground onSaveAsSnippet={goCreateFromPlayground} />}
       </div>
 
       {!inSnippetDetail && (

@@ -1,4 +1,4 @@
-# CppVault
+# CodeVault
 
 Personal C++ snippet manager + code runner. Runs in Docker, accessed from Android via Tailscale.
 

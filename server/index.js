@@ -6,7 +6,7 @@ import snippetRoutes from './routes.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isProd = process.env.NODE_ENV === 'production'
-const PORT = 5174
+const PORT = 5173
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data')
 
 async function main() {
@@ -28,7 +28,7 @@ async function main() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`CppVault → http://0.0.0.0:${PORT}`)
+    console.log(`CodeVault → http://0.0.0.0:${PORT}`)
   })
 }
 

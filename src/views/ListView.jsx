@@ -29,7 +29,7 @@ export default function ListView({ onSelect, onCreate }) {
     <div className="list-view">
       <div className="list-header">
         <div className="list-top">
-          <h1 className="app-title">CppVault</h1>
+          <h1 className="app-title">CodeVault</h1>
           <span className="snippet-count">{snippets.length}</span>
         </div>
         <input

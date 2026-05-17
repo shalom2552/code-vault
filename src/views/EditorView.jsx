@@ -6,9 +6,15 @@ import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
 const uid = () => Math.random().toString(36).slice(2)
 const emptyFile = (language) => ({ _key: uid(), name: getLanguage(language).defaultFile, content: '' })
 
-export default function EditorView({ snippetId, onSave, onBack }) {
+export default function EditorView({ snippetId, initialData, onSave, onBack }) {
   const isEdit = Boolean(snippetId)
-  const [form, setForm] = useState({ title: '', tags: '', notes: '', language: DEFAULT_LANGUAGE, files: [emptyFile(DEFAULT_LANGUAGE)] })
+  const [form, setForm] = useState(() => {
+    const language = initialData?.language ?? DEFAULT_LANGUAGE
+    const files = initialData
+      ? [{ _key: getLanguage(language).defaultFile, name: getLanguage(language).defaultFile, content: initialData.code }]
+      : [emptyFile(language)]
+    return { title: '', tags: '', notes: '', language, files }
+  })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {

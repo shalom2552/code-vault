@@ -5,7 +5,7 @@ import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
 
 const storageKey = (lang) => `playground-code-${lang}`
 
-export default function Playground() {
+export default function Playground({ onSaveAsSnippet }) {
   const [language, setLanguage] = useState(() => localStorage.getItem('playground-language') || DEFAULT_LANGUAGE)
   const [code, setCode] = useState(() => {
     const lang = localStorage.getItem('playground-language') || DEFAULT_LANGUAGE
@@ -78,6 +78,11 @@ export default function Playground() {
         <button className="playground-run-btn" onClick={handleRun} disabled={running}>
           {running ? '…' : '▶ Run'}
         </button>
+        <button
+          className="playground-save-btn"
+          onClick={() => onSaveAsSnippet(code, language)}
+          disabled={code === getLanguage(language).playgroundDefault}
+        >Save</button>
       </div>
     </div>
   )
