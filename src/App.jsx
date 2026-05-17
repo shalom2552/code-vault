@@ -32,6 +32,7 @@ export default function App() {
   const goList = () => { setView('list'); setPlaygroundSeed(null) }
   const goCreate = () => { setSelectedId(null); setView('create') }
   const goEdit = () => setView('edit')
+  const goEditFromList = (id) => { setSelectedId(id); setView('editFromList') }
   const goPlayground = () => { setTab('playground'); setPlaygroundSeed(null) }
 
   const goCreateFromPlayground = (code, language) => {
@@ -48,7 +49,7 @@ export default function App() {
       <div className="tab-content">
         {tab === 'snippets' && (
           <>
-            {view === 'list' && <ListView onSelect={goDetail} onCreate={goCreate} />}
+            {view === 'list' && <ListView onSelect={goDetail} onCreate={goCreate} onEdit={goEditFromList} />}
             {view === 'detail' && <DetailView id={selectedId} onBack={goList} onEdit={goEdit} onDeleted={goList} />}
             {view === 'create' && (
               <EditorView
@@ -58,6 +59,7 @@ export default function App() {
               />
             )}
             {view === 'edit' && <EditorView snippetId={selectedId} onSave={goDetail} onBack={() => setView('detail')} />}
+            {view === 'editFromList' && <EditorView snippetId={selectedId} onSave={goDetail} onBack={goList} />}
           </>
         )}
         {tab === 'playground' && <Playground onSaveAsSnippet={goCreateFromPlayground} />}

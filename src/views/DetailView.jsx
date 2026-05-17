@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import CodeBlock from '../components/CodeBlock.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { api } from '../api.js'
 
 export default function DetailView({ id, onBack, onEdit, onDeleted }) {
@@ -8,6 +9,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
   const [stdin, setStdin] = useState('')
   const [running, setRunning] = useState(false)
   const [runOutput, setRunOutput] = useState(null)
+  const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
     setSnippet(null)
@@ -17,7 +19,6 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
   }, [id])
 
   const handleDelete = async () => {
-    if (!confirm(`Delete "${snippet.title}"?`)) return
     await api.deleteSnippet(id)
     onDeleted()
   }
@@ -41,7 +42,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
         <span className="nav-title">{snippet.title}</span>
         <div className="nav-actions">
           <button className="action-btn" onClick={onEdit}>Edit</button>
-          <button className="action-btn danger" onClick={handleDelete}>Del</button>
+          <button className="action-btn danger" onClick={() => setConfirming(true)}>Del</button>
         </div>
       </div>
 
@@ -89,6 +90,13 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
           {running ? '…' : '▶ Run'}
         </button>
       </div>
+      {confirming && (
+        <ConfirmDialog
+          message={`Delete "${snippet.title}"?`}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
     </div>
   )
 }

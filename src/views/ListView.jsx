@@ -1,12 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE } from '../languages.js'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
-export default function ListView({ onSelect, onCreate }) {
+export default function ListView({ onSelect, onCreate, onEdit }) {
   const [snippets, setSnippets] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState(null)
+  const [menuSnippet, setMenuSnippet] = useState(null)
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 })
+  const [deleting, setDeleting] = useState(false)
+  const pressTimer = useRef(null)
+  const didLongPress = useRef(false)
+  const pressPos = useRef({ x: 0, y: 0 })
 
   const load = () => {
     setLoading(true)
@@ -16,6 +23,41 @@ export default function ListView({ onSelect, onCreate }) {
   }
 
   useEffect(load, [])
+
+  const startPress = (s, e) => {
+    pressPos.current = { x: e.clientX, y: e.clientY }
+    didLongPress.current = false
+    pressTimer.current = setTimeout(() => {
+      didLongPress.current = true
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const menuW = 160
+      const menuH = 96
+      setMenuPos({
+        x: Math.min(pressPos.current.x, vw - menuW - 8),
+        y: Math.min(pressPos.current.y, vh - menuH - 8),
+      })
+      setMenuSnippet(s)
+    }, 500)
+  }
+
+  const cancelPress = () => clearTimeout(pressTimer.current)
+
+  const handleCardClick = (id) => {
+    if (didLongPress.current) return
+    onSelect(id)
+  }
+
+  const [confirmTarget, setConfirmTarget] = useState(null)
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    await api.deleteSnippet(confirmTarget.id)
+    setConfirmTarget(null)
+    setMenuSnippet(null)
+    setDeleting(false)
+    load()
+  }
 
   const allTags = [...new Set(snippets.flatMap(s => s.tags))].sort()
   const q = search.toLowerCase()
@@ -57,7 +99,15 @@ export default function ListView({ onSelect, onCreate }) {
           : filtered.length === 0
             ? <div className="empty">{search || activeTag ? 'No matches' : 'No snippets yet'}</div>
             : filtered.map(s => (
-              <div key={s.id} className="snippet-card" onClick={() => onSelect(s.id)}>
+              <div
+                key={s.id}
+                className="snippet-card"
+                onPointerDown={(e) => startPress(s, e)}
+                onPointerUp={cancelPress}
+                onPointerLeave={cancelPress}
+                onPointerCancel={cancelPress}
+                onClick={() => handleCardClick(s.id)}
+              >
                 <div className="card-title">{s.title}</div>
                 <div className="card-meta">
                   <span className="card-files">{s.files.length} file{s.files.length !== 1 ? 's' : ''}</span>
@@ -72,6 +122,23 @@ export default function ListView({ onSelect, onCreate }) {
       </div>
 
       <button className="fab" onClick={onCreate}>+</button>
+
+      {confirmTarget && (
+        <ConfirmDialog
+          message={`Delete "${confirmTarget.title}"?`}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmTarget(null)}
+        />
+      )}
+
+      {menuSnippet && (
+        <div className="ctx-overlay" onClick={() => setMenuSnippet(null)}>
+          <div className="ctx-menu" style={{ left: menuPos.x, top: menuPos.y }} onClick={e => e.stopPropagation()}>
+            <button className="ctx-item" onClick={() => { setMenuSnippet(null); onEdit(menuSnippet.id) }}>Edit</button>
+            <button className="ctx-item ctx-item-danger" onClick={() => setConfirmTarget(menuSnippet)}>Delete</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
