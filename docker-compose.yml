@@ -1,6 +1,7 @@
 services:
   cppvault:
     build: .
+    container_name: myapp
     ports:
       - "5174:5174"
     volumes:
@@ -8,3 +9,11 @@ services:
     environment:
       - NODE_ENV=production
     restart: unless-stopped
+
+  test:
+    build: .
+    volumes:
+      - .:/app           # live source — tests always reflect current files
+      - /app/node_modules  # preserve Alpine-compiled node_modules from image
+    command: npm test
+    profiles: [test]

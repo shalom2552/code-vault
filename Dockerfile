@@ -1,5 +1,5 @@
 FROM node:24-alpine
-RUN apk add --no-cache g++ make
+RUN apk add --no-cache gcc g++ make python3
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --production=false

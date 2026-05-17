@@ -3,6 +3,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { randomUUID } from 'crypto'
 import { exec, spawn } from 'child_process'
+import { getLanguage, isValidLanguage, DEFAULT_LANGUAGE } from './languages.js'
 
 const validId = (id) => /^[a-zA-Z0-9-]+$/.test(id)
 const validFilename = (n) => /^[a-zA-Z0-9_.-]+$/.test(n) && !n.includes('..')
@@ -43,7 +44,8 @@ export default function snippetRoutes(DATA_DIR) {
     if (!files?.length) return res.status(400).json({ error: 'No files' })
     const id = randomUUID()
     const now = new Date().toISOString()
-    const meta = { id, title: title || 'Untitled', tags: tags || [], notes: notes || '', files: files.map(f => f.name), createdAt: now, updatedAt: now }
+    const language = isValidLanguage(req.body.language) ? req.body.language : DEFAULT_LANGUAGE
+    const meta = { id, title: title || 'Untitled', tags: tags || [], notes: notes || '', language, files: files.map(f => f.name), createdAt: now, updatedAt: now }
     await fs.mkdir(dir(id), { recursive: true })
     await fs.writeFile(path.join(dir(id), 'meta.json'), JSON.stringify(meta, null, 2))
     await Promise.all(files.filter(f => validFilename(f.name)).map(f => fs.writeFile(path.join(dir(id), f.name), f.content || '')))
@@ -56,9 +58,15 @@ export default function snippetRoutes(DATA_DIR) {
     const { title, tags, notes, files } = req.body
     try {
       const meta = JSON.parse(await fs.readFile(path.join(dir(id), 'meta.json'), 'utf-8'))
-      const updated = { ...meta, title: title ?? meta.title, tags: tags ?? meta.tags, notes: notes ?? meta.notes, files: files ? files.map(f => f.name) : meta.files, updatedAt: new Date().toISOString() }
+      const language = req.body.language && getLanguage(req.body.language) ? req.body.language : (meta.language ?? DEFAULT_LANGUAGE)
+      const updated = { ...meta, title: title ?? meta.title, tags: tags ?? meta.tags, notes: notes ?? meta.notes, language, files: files ? files.map(f => f.name) : meta.files, updatedAt: new Date().toISOString() }
       await fs.writeFile(path.join(dir(id), 'meta.json'), JSON.stringify(updated, null, 2))
-      if (files) await Promise.all(files.filter(f => validFilename(f.name)).map(f => fs.writeFile(path.join(dir(id), f.name), f.content || '')))
+      if (files) {
+        await Promise.all(files.filter(f => validFilename(f.name)).map(f => fs.writeFile(path.join(dir(id), f.name), f.content || '')))
+        const newNames = new Set(files.map(f => f.name))
+        const removed = meta.files.filter(n => !newNames.has(n))
+        await Promise.all(removed.map(n => fs.unlink(path.join(dir(id), n)).catch(() => {})))
+      }
       res.json(updated)
     } catch { res.status(404).json({ error: 'Not found' }) }
   })
@@ -67,6 +75,7 @@ export default function snippetRoutes(DATA_DIR) {
     const { id } = req.params
     if (!validId(id)) return res.status(400).json({ error: 'Invalid id' })
     try {
+      await fs.access(dir(id))
       await fs.rm(dir(id), { recursive: true, force: true })
       res.json({ ok: true })
     } catch { res.status(404).json({ error: 'Not found' }) }
@@ -79,18 +88,18 @@ export default function snippetRoutes(DATA_DIR) {
     const snippetDir = dir(id)
     const outBin = `/tmp/cppvault-${id}`
 
-    let cppFiles
+    let srcFiles, lang
     try {
-      const all = await fs.readdir(snippetDir)
-      cppFiles = all.filter(f => f.endsWith('.cpp')).map(f => path.join(snippetDir, f))
+      const meta = JSON.parse(await fs.readFile(path.join(snippetDir, 'meta.json'), 'utf-8'))
+      lang = getLanguage(meta.language ?? DEFAULT_LANGUAGE)
+      srcFiles = meta.files.filter(f => f.endsWith(lang.ext)).map(f => path.join(snippetDir, f))
     } catch { return res.status(404).json({ error: 'Snippet not found' }) }
 
-    if (!cppFiles.length) return res.json({ stdout: '', stderr: 'No .cpp files found', exitCode: 1 })
+    if (!srcFiles.length) return res.json({ stdout: '', stderr: `No ${lang.ext} files found`, exitCode: 1 })
 
-    exec(`g++ ${cppFiles.join(' ')} -o ${outBin}`, { timeout: 15000 }, (err, _, stderr) => {
-      if (err) return res.json({ stdout: '', stderr, exitCode: 1 })
-
-      const child = spawn(outBin, [], { timeout: 10000 })
+    const runProgram = () => {
+      const [cmd, ...args] = lang.runner(outBin, srcFiles)
+      const child = spawn(cmd, args)
       let stdout = '', runErr = ''
       child.stdout.on('data', d => stdout += d)
       child.stderr.on('data', d => runErr += d)
@@ -108,48 +117,36 @@ export default function snippetRoutes(DATA_DIR) {
         fs.unlink(outBin).catch(() => {})
         res.json({ stdout, stderr: runErr, exitCode: code })
       })
-    })
+    }
+
+    if (lang.compile) {
+      exec(lang.compile(srcFiles, outBin), { timeout: 15000 }, (err, _, stderr) => {
+        if (err) return res.json({ stdout: '', stderr, exitCode: 1 })
+        runProgram()
+      })
+    } else {
+      runProgram()
+    }
   })
 
   router.post('/playground/run', async (req, res) => {
-    const { code = '', stdin = '' } = req.body
+    const { code = '', stdin = '', language: langId } = req.body
+    const lang = getLanguage(langId)
     const id = randomUUID()
     const tmpDir = `/tmp/playground-${id}`
-    const srcFile = `${tmpDir}/main.cpp`
+    const srcFile = `${tmpDir}/${lang.srcFile}`
     const outBin = `${tmpDir}/out`
-
-    const wrapped = `#include <iostream>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <queue>
-#include <stack>
-#include <cmath>
-#include <sstream>
-#include <numeric>
-using namespace std;
-
-${code}`
 
     try {
       await fs.mkdir(tmpDir, { recursive: true })
-      await fs.writeFile(srcFile, wrapped)
+      await fs.writeFile(srcFile, lang.playgroundWrap(code))
     } catch (e) {
       return res.json({ stdout: '', stderr: e.message, exitCode: 1 })
     }
 
-    exec(`g++ ${srcFile} -o ${outBin}`, { timeout: 15000 }, (err, _, stderr) => {
-      if (err) {
-        fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
-        const cleaned = stderr.replace(/\/tmp\/playground-[^/]+\/main\.cpp/g, 'main.cpp')
-        return res.json({ stdout: '', stderr: cleaned, exitCode: 1 })
-      }
-
-      const child = spawn(outBin, [], { timeout: 10000 })
+    const runPlayground = () => {
+      const [cmd, ...args] = lang.runner(outBin, [srcFile])
+      const child = spawn(cmd, args)
       let stdout = '', runErr = ''
       child.stdout.on('data', d => stdout += d)
       child.stderr.on('data', d => runErr += d)
@@ -168,7 +165,20 @@ ${code}`
         fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
         res.json({ stdout, stderr: runErr, exitCode: code })
       })
-    })
+    }
+
+    if (lang.compile) {
+      exec(lang.compile([srcFile], outBin), { timeout: 15000 }, (err, _, stderr) => {
+        if (err) {
+          fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
+          const cleaned = stderr.replace(/\/tmp\/playground-[^/]+\/[^:]+/g, lang.srcFile)
+          return res.json({ stdout: '', stderr: cleaned, exitCode: 1 })
+        }
+        runPlayground()
+      })
+    } else {
+      runPlayground()
+    }
   })
 
   return router

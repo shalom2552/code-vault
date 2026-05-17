@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api.js'
+import { LANGUAGES, DEFAULT_LANGUAGE } from '../languages.js'
 
 export default function ListView({ onSelect, onCreate }) {
   const [snippets, setSnippets] = useState([])
@@ -60,6 +61,7 @@ export default function ListView({ onSelect, onCreate }) {
                 <div className="card-title">{s.title}</div>
                 <div className="card-meta">
                   <span className="card-files">{s.files.length} file{s.files.length !== 1 ? 's' : ''}</span>
+                  <span className="card-lang">{LANGUAGES[s.language ?? DEFAULT_LANGUAGE]?.label ?? s.language}</span>
                   <div className="card-tags">
                     {s.tags.map(t => <span key={t} className="card-tag">{t}</span>)}
                   </div>

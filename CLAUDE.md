@@ -41,18 +41,21 @@ data/                   # bind-mounted volume — UUID dirs with meta.json + .cp
 | POST | /api/snippets | create |
 | PUT | /api/snippets/:id | update |
 | DELETE | /api/snippets/:id | rm -rf |
-| POST | /api/snippets/:id/run | g++ compile + exec |
-| POST | /api/playground/run | compile code wrapped in main() + std headers |
+| POST | /api/snippets/:id/run | compile + exec (language from meta) |
+| POST | /api/playground/run | compile code wrapped in headers + std includes |
 
-Storage: `data/<uuid>/meta.json` + raw `.cpp`/`.h` files. No database.
+Storage: `data/<uuid>/meta.json` + raw source files. No database. `meta.json` includes `language` field (`cpp` or `c`, default `cpp`).
 
 ## Dev
 
+Everything runs inside Docker. `~/docker/myapp` on host is bind-mounted into the container. Claude Code runs on host and edits files there; Docker picks up changes via the mount.
+
 ```bash
-cd ~/docker/myapp && npm run dev
+# inside the container
+npm run dev
 ```
 
-Single process — Express on 5174, Vite HMR active. Restart server for backend changes.
+Single process — Express on 5174, Vite HMR active. Restart container for backend changes.
 
 Tailscale HTTPS:
 - **App URL:** `https://cachyos-nvme.tail5500ce.ts.net`
@@ -66,7 +69,17 @@ docker compose up --build   # prod build inside container
 ```
 
 `./data:/app/data` bind mount — same files, no copy. Data at `~/docker/myapp/data/` on host.
-Container needs g++: `apk add --no-cache g++ make` (already in Dockerfile).
+Container needs gcc + g++: `apk add --no-cache gcc g++ make` (already in Dockerfile).
+
+## Tests
+
+Tests must run inside Docker — app uses Alpine + musl libc + Alpine's gcc/g++. Running on host gives wrong compiler and libc.
+
+```bash
+docker compose --profile test run --rm test
+```
+
+The `test` service mounts source live (always current) and preserves Alpine node_modules from the image. No rebuild needed when editing tests or source — only rebuild when adding npm dependencies.
 
 ## Conventions
 

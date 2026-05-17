@@ -19,9 +19,9 @@ export const api = {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ stdin }),
   }).then(json),
-  runPlayground: (code, stdin) => fetch('/api/playground/run', {
+  runPlayground: (code, stdin, language) => fetch('/api/playground/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code, stdin }),
+    body: JSON.stringify({ code, stdin, language }),
   }).then(json),
 }

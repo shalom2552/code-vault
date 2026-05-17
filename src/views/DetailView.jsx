@@ -66,7 +66,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
           </div>
         )}
 
-        <CodeBlock code={file?.content || ''} filename={snippet.files.length === 1 ? file?.name : null} />
+        <CodeBlock code={file?.content || ''} filename={snippet.files.length === 1 ? file?.name : null} language={snippet.language ?? 'cpp'} />
 
         {runOutput && (
           <div className="run-output">

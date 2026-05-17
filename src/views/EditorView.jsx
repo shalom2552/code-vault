@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import CodeEditor from '../components/CodeEditor.jsx'
 import { api } from '../api.js'
+import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
 
 const uid = () => Math.random().toString(36).slice(2)
-const EMPTY_FILE = () => ({ _key: uid(), name: 'main.cpp', content: '' })
+const emptyFile = (language) => ({ _key: uid(), name: getLanguage(language).defaultFile, content: '' })
 
 export default function EditorView({ snippetId, onSave, onBack }) {
   const isEdit = Boolean(snippetId)
-  const [form, setForm] = useState({ title: '', tags: '', notes: '', files: [EMPTY_FILE()] })
+  const [form, setForm] = useState({ title: '', tags: '', notes: '', language: DEFAULT_LANGUAGE, files: [emptyFile(DEFAULT_LANGUAGE)] })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -19,6 +20,7 @@ export default function EditorView({ snippetId, onSave, onBack }) {
         title: d.title,
         tags: d.tags.join(', '),
         notes: d.notes || '',
+        language: d.language ?? DEFAULT_LANGUAGE,
         files: d.files.map(f => ({ ...f, _key: f.name })),
       })
     })
@@ -26,6 +28,17 @@ export default function EditorView({ snippetId, onSave, onBack }) {
   }, [snippetId])
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+
+  const handleLanguageChange = (e) => {
+    const language = e.target.value
+    setForm(f => ({
+      ...f,
+      language,
+      files: f.files.map((file, i) =>
+        i === 0 && !isEdit ? { ...file, name: getLanguage(language).defaultFile } : file
+      ),
+    }))
+  }
 
   const updateFile = (key, field, val) => {
     setForm(f => ({
@@ -44,6 +57,7 @@ export default function EditorView({ snippetId, onSave, onBack }) {
       title: form.title.trim(),
       tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
       notes: form.notes,
+      language: form.language,
       files: form.files
         .filter(f => f.name)
         .map(({ _key, ...f }) => f),
@@ -70,13 +84,19 @@ export default function EditorView({ snippetId, onSave, onBack }) {
         <input className="form-input" placeholder="Tags — comma separated" value={form.tags} onChange={set('tags')} />
         <textarea className="form-textarea" placeholder="Notes (optional)" value={form.notes} onChange={set('notes')} rows={3} />
 
+        <select className="form-select" value={form.language} onChange={handleLanguageChange}>
+          {Object.entries(LANGUAGES).map(([id, lang]) => (
+            <option key={id} value={id}>{lang.label}</option>
+          ))}
+        </select>
+
         <div className="files-section">
           {form.files.map(f => (
             <div key={f._key} className="file-editor">
               <div className="file-editor-top">
                 <input
                   className="file-name-input"
-                  placeholder="filename.cpp"
+                  placeholder={getLanguage(form.language).defaultFile}
                   value={f.name}
                   onChange={e => updateFile(f._key, 'name', e.target.value)}
                 />
@@ -87,6 +107,7 @@ export default function EditorView({ snippetId, onSave, onBack }) {
               <CodeEditor
                 value={f.content}
                 onChange={val => updateFile(f._key, 'content', val)}
+                language={form.language}
                 autoHeight
               />
             </div>

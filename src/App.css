@@ -168,6 +168,14 @@
   color: var(--muted);
   flex-shrink: 0;
 }
+.card-lang {
+  font-size: 11px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
 .card-tags {
   display: flex;
   gap: 5px;
@@ -377,6 +385,18 @@
 }
 .form-textarea:focus { border-color: var(--accent); }
 .form-textarea::placeholder { color: var(--muted); }
+.form-select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'Outfit', sans-serif;
+  padding: 8px 12px;
+  outline: none;
+  cursor: pointer;
+}
+.form-select:focus { border-color: var(--accent); }
 
 .files-section {
   display: flex;
@@ -490,6 +510,15 @@
   display: flex;
   align-items: baseline;
   gap: 10px;
+}
+.playground-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.playground-lang-select {
+  font-size: 13px;
+  padding: 4px 10px;
 }
 .playground-title { font-size: 17px; font-weight: 600; }
 .playground-hint-inline { font-size: 11px; color: var(--muted); }
