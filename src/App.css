@@ -39,6 +39,11 @@
   padding: 0 4px;
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .nav-title {
   flex: 1;
@@ -129,11 +134,18 @@
   border-radius: 99px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: color 0.1s, border-color 0.1s;
+  transition: color 0.1s, border-color 0.1s, background-color 0.1s;
+}
+.tag-chip:hover {
+  border-color: var(--muted);
+  color: var(--text);
 }
 .tag-chip.active {
   color: var(--accent);
   border-color: var(--accent);
+}
+.tag-chip.active:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .snippets-list {
@@ -150,8 +162,12 @@
   border-radius: 10px;
   padding: 14px 16px;
   cursor: pointer;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, background-color 0.12s;
   -webkit-tap-highlight-color: transparent;
+}
+.snippet-card:hover {
+  border-color: var(--muted);
+  background: color-mix(in srgb, var(--text) 2%, var(--surface));
 }
 .snippet-card:active { border-color: var(--accent); }
 .card-title {
@@ -186,7 +202,7 @@
 .card-tag {
   font-size: 11px;
   color: var(--accent);
-  opacity: 0.7;
+  opacity: 0.9;
 }
 
 .empty {
@@ -436,22 +452,11 @@
   padding: 8px 14px;
   cursor: pointer;
   line-height: 1;
-}
-.code-textarea {
-  width: 100%;
-  background: var(--code-bg);
-  border: none;
-  color: #c9d1d9;
-  font-family: ui-monospace, 'Cascadia Code', monospace;
-  font-size: 13px;
-  line-height: 1.6;
-  padding: 14px;
-  resize: vertical;
-  outline: none;
-  box-sizing: border-box;
-  tab-size: 2;
-  white-space: pre;
-  overflow-x: auto;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .add-file-btn {
   background: none;

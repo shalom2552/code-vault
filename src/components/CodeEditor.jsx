@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { cpp } from '@codemirror/lang-cpp'
 import { python } from '@codemirror/lang-python'
@@ -38,7 +39,7 @@ const SETUP = {
   tabSize: 2,
 }
 
-export default function CodeEditor({ value, onChange, minHeight = '260px', autoHeight = false, language = 'cpp' }) {
+function CodeEditor({ value, onChange, minHeight = '260px', autoHeight = false, language = 'cpp' }) {
   const extensions = autoHeight
     ? (AUTO_HEIGHT_EXTENSIONS[language] ?? FALLBACK_AUTO)
     : (BASE_EXTENSIONS[language] ?? FALLBACK_BASE)
@@ -54,3 +55,5 @@ export default function CodeEditor({ value, onChange, minHeight = '260px', autoH
     />
   )
 }
+
+export default memo(CodeEditor)
