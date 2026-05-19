@@ -214,4 +214,51 @@ describe('playground /run', () => {
       expect(after.length).toBe(before.length)
     }, COMPILE_TIMEOUT)
   })
+
+  // ---------------------------------------------------------------------------
+  // Executor behavior (P3 responded guard, P14 stdin cap)
+  // ---------------------------------------------------------------------------
+
+  describe('executor behavior', () => {
+    const EXECUTOR_TIMEOUT = 25000
+
+    it('timeout returns exitCode 124 and Timeout message in stderr', async () => {
+      const res = await request(app)
+        .post('/api/playground/run')
+        .send({ code: 'int main(){ for(;;){} }', language: 'cpp' })
+      expect(res.body.exitCode).toBe(124)
+      expect(res.body.stderr).toContain('Timeout')
+    }, EXECUTOR_TIMEOUT)
+
+    // After a timeout the responded guard (done flag in executor) prevents a second
+    // res.json(). A follow-up request succeeding is the observable proxy for "no crash".
+    it('server remains responsive after a timeout (responded guard prevents double-send)', async () => {
+      await request(app)
+        .post('/api/playground/run')
+        .send({ code: 'int main(){ for(;;){} }', language: 'cpp' })
+      const health = await request(app).get('/api/snippets')
+      expect(health.status).toBe(200)
+    }, EXECUTOR_TIMEOUT)
+
+    // P14: executor caps stdin at MAX_STDIN_BYTES (64 KB) before writing to child.stdin
+    it('stdin is capped at 64 KB — excess bytes are silently discarded', async () => {
+      const res = await request(app)
+        .post('/api/playground/run')
+        .send({
+          code: `
+#include <iterator>
+#include <vector>
+int main() {
+    vector<char> v(istreambuf_iterator<char>(cin), istreambuf_iterator<char>{});
+    cout << v.size();
+    return 0;
+}
+`,
+          stdin: 'x'.repeat(70 * 1024),
+          language: 'cpp',
+        })
+      expect(res.body.exitCode).toBe(0)
+      expect(parseInt(res.body.stdout.trim(), 10)).toBe(64 * 1024)
+    }, COMPILE_TIMEOUT)
+  })
 })

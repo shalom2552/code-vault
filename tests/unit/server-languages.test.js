@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../../server/languages.js'
+import { LANGUAGES as clientLANGUAGES } from '../../src/languages.js'
 
 describe('server language registry', () => {
   describe('registry shape', () => {
@@ -113,5 +114,12 @@ describe('server language registry', () => {
   describe('DEFAULT_LANGUAGE', () => {
     it('is "cpp"', () => expect(DEFAULT_LANGUAGE).toBe('cpp'))
     it('exists as a key in LANGUAGES', () => expect(LANGUAGES[DEFAULT_LANGUAGE]).toBeDefined())
+  })
+})
+
+// P28: cross-check that server and client registries declare the same language IDs
+describe('cross-check: server vs client language registry', () => {
+  it('server and client LANGUAGES have identical keys', () => {
+    expect(Object.keys(LANGUAGES).sort()).toEqual(Object.keys(clientLANGUAGES).sort())
   })
 })
