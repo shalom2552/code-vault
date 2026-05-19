@@ -1,19 +1,16 @@
 services:
-  cppvault:
+  codevault:
     build: .
-    container_name: myapp
+    image: codevault
+    container_name: codevault
     ports:
       - "5174:5174"
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
     volumes:
-      - ./data:/app/data
+      - .:/app
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
     restart: unless-stopped
-
-  test:
-    build: .
-    volumes:
-      - .:/app           # live source — tests always reflect current files
-      - /app/node_modules  # preserve Alpine-compiled node_modules from image
-    command: npm test
-    profiles: [test]

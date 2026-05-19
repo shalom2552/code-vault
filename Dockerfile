@@ -1,9 +1,13 @@
 FROM node:24-alpine
-RUN apk add --no-cache gcc g++ make python3
+# Add compilers and tailscale
+RUN apk add --no-cache gcc g++ make python3 tailscale
+
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci --production=false
-COPY . .
-RUN npm run build
+
+# In development, we don't COPY the code because we bind-mount it.
+# But we copy the entrypoint to the root so it's always available.
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 5174
-CMD ["node", "server/index.js"]
+ENTRYPOINT ["/entrypoint.sh"]

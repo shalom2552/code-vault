@@ -10,8 +10,8 @@ const validId = (id) => /^[a-zA-Z0-9-]+$/.test(id)
 // P16: reject dot-prefix names (.env, .bashrc)
 const validFilename = (n) => /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(n) && !n.includes('..')
 
-// P11: rate limit compile+exec endpoints — 10 req/min per IP
-const runLimiter = rateLimit({ windowMs: 60_000, max: 10, standardHeaders: true, legacyHeaders: false })
+// P11: rate limit compile+exec endpoints — 10 req/min per IP; skip in test (VITEST env)
+const runLimiter = rateLimit({ windowMs: 60_000, max: 10, standardHeaders: true, legacyHeaders: false, skip: () => !!process.env.VITEST })
 
 // P15: tags element-level validation
 function validateTags(tags) {
