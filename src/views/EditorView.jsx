@@ -3,8 +3,7 @@ import CodeEditor from '../components/CodeEditor.jsx'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
 
-const uid = () => Math.random().toString(36).slice(2)
-const emptyFile = (language) => ({ _key: uid(), name: getLanguage(language).defaultFile, content: '' })
+const emptyFile = (language) => ({ _key: crypto.randomUUID(), name: getLanguage(language).defaultFile, content: '' })
 
 export default function EditorView({ snippetId, initialData, onSave, onBack }) {
   const isEdit = Boolean(snippetId)
@@ -16,6 +15,7 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
     return { title: '', tags: '', notes: '', language, files }
   })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!isEdit) return
@@ -29,11 +29,17 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
         language: d.language ?? DEFAULT_LANGUAGE,
         files: d.files.map(f => ({ ...f, _key: f.name })),
       })
+    }).catch(e => {
+      if (ignored) return
+      setError(`Failed to load snippet: ${e.message}`)
     })
     return () => { ignored = true }
-  }, [snippetId])
+  }, [snippetId, isEdit])
 
-  const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+  const set = (field) => (e) => {
+    setError(null)
+    setForm(f => ({ ...f, [field]: e.target.value }))
+  }
 
   const handleLanguageChange = (e) => {
     const language = e.target.value
@@ -53,26 +59,32 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
     }))
   }
 
-  const addFile = () => setForm(f => ({ ...f, files: [...f.files, { _key: uid(), name: '', content: '' }] }))
+  const addFile = () => setForm(f => ({ ...f, files: [...f.files, { _key: crypto.randomUUID(), name: '', content: '' }] }))
   const removeFile = (key) => setForm(f => ({ ...f, files: f.files.filter(file => file._key !== key) }))
 
   const handleSave = async () => {
-    if (!form.title.trim()) return alert('Title required')
+    if (!form.title.trim()) return setError('Title required')
     setSaving(true)
-    const body = {
-      title: form.title.trim(),
-      tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
-      notes: form.notes,
-      language: form.language,
-      files: form.files
-        .filter(f => f.name)
-        .map(({ _key, ...f }) => f),
+    setError(null)
+    try {
+      const body = {
+        title: form.title.trim(),
+        tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+        notes: form.notes,
+        language: form.language,
+        files: form.files
+          .filter(f => f.name)
+          .map(({ _key: _, ...f }) => f),
+      }
+      const saved = isEdit
+        ? await api.updateSnippet(snippetId, body)
+        : await api.createSnippet(body)
+      onSave(saved.id)
+    } catch (e) {
+      setError(`Save failed: ${e.message}`)
+    } finally {
+      setSaving(false)
     }
-    const saved = isEdit
-      ? await api.updateSnippet(snippetId, body)
-      : await api.createSnippet(body)
-    setSaving(false)
-    onSave(saved.id)
   }
 
   return (
@@ -80,9 +92,12 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
       <div className="nav-header">
         <button className="back-btn" onClick={onBack}>←</button>
         <span className="nav-title">{isEdit ? 'Edit' : 'New Snippet'}</span>
-        <button className="save-btn" onClick={handleSave} disabled={saving}>
-          {saving ? '…' : 'Save'}
-        </button>
+        <div className="nav-actions-error">
+          {error && <span className="inline-error">{error}</span>}
+          <button className="save-btn" onClick={handleSave} disabled={saving}>
+            {saving ? '…' : 'Save'}
+          </button>
+        </div>
       </div>
 
       <div className="editor-form">

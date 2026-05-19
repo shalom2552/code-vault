@@ -10,26 +10,51 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
   const [running, setRunning] = useState(false)
   const [runOutput, setRunOutput] = useState(null)
   const [confirming, setConfirming] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     setSnippet(null)
+    setError(null)
     setActiveFile(0)
     setRunOutput(null)
-    api.getSnippet(id).then(setSnippet)
+    api.getSnippet(id)
+      .then(setSnippet)
+      .catch(e => setError(e.message))
   }, [id])
 
   const handleDelete = async () => {
-    await api.deleteSnippet(id)
-    onDeleted()
+    try {
+      setError(null)
+      await api.deleteSnippet(id)
+      onDeleted()
+    } catch (e) {
+      setError(`Delete failed: ${e.message}`)
+    }
   }
 
   const handleRun = async () => {
     setRunning(true)
+    setError(null)
     setRunOutput(null)
-    const out = await api.runSnippet(id, stdin)
-    setRunOutput(out)
-    setRunning(false)
+    try {
+      const out = await api.runSnippet(id, stdin)
+      setRunOutput(out)
+    } catch (e) {
+      setError(`Run failed: ${e.message}`)
+    } finally {
+      setRunning(false)
+    }
   }
+
+  if (error && !snippet) return (
+    <div className="detail-view">
+      <div className="nav-header">
+        <button className="back-btn" onClick={onBack}>←</button>
+        <span className="nav-title">Error</span>
+      </div>
+      <div className="error-banner">{error}</div>
+    </div>
+  )
 
   if (!snippet) return <div className="loading">Loading...</div>
 
@@ -46,6 +71,8 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
         </div>
       </div>
 
+      {error && <div className="error-banner">{error}</div>}
+
       <div className="detail-scroll">
         {snippet.tags.length > 0 && (
           <div className="detail-tags">
@@ -59,10 +86,13 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
           <div className="file-tabs">
             {snippet.files.map((f, i) => (
               <button
-                key={f.name}
-                className={`file-tab${activeFile === i ? ' active' : ''}`}
+                key={f.name || i}
+                className={`file-tab${activeFile === i ? ' active' : ''}${!f.content && f.name ? ' missing' : ''}`}
                 onClick={() => setActiveFile(i)}
-              >{f.name}</button>
+              >
+                {f.name || '(untitled)'}
+                {!f.content && f.name && <span className="missing-indicator" title="File content missing">!</span>}
+              </button>
             ))}
           </div>
         )}

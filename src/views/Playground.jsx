@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import CodeEditor from '../components/CodeEditor.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
 
@@ -14,8 +15,20 @@ export default function Playground({ onSaveAsSnippet }) {
   const [stdin, setStdin] = useState('')
   const [running, setRunning] = useState(false)
   const [output, setOutput] = useState(null)
+  const [error, setError] = useState(null)
+  const [confirmingReset, setConfirmingReset] = useState(false)
 
-  const saveCode = (val) => { setCode(val); localStorage.setItem(storageKey(language), val) }
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem(storageKey(language), code)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [code, language])
+
+  const saveCode = (val) => {
+    setCode(val)
+    setError(null)
+  }
 
   const handleLanguageChange = (e) => {
     const lang = e.target.value
@@ -24,21 +37,35 @@ export default function Playground({ onSaveAsSnippet }) {
     const saved = localStorage.getItem(storageKey(lang))
     setCode(saved || getLanguage(lang).playgroundDefault)
     setOutput(null)
+    setError(null)
   }
 
   const handleReset = () => {
     const def = getLanguage(language).playgroundDefault
-    if (code !== def && !confirm('Reset to blank template?')) return
+    if (code === def) return
+    setConfirmingReset(true)
+  }
+
+  const confirmReset = () => {
+    const def = getLanguage(language).playgroundDefault
     saveCode(def)
+    localStorage.setItem(storageKey(language), def)
     setOutput(null)
+    setConfirmingReset(false)
   }
 
   const handleRun = async () => {
     setRunning(true)
     setOutput(null)
-    const out = await api.runPlayground(code, stdin, language)
-    setOutput(out)
-    setRunning(false)
+    setError(null)
+    try {
+      const out = await api.runPlayground(code, stdin, language)
+      setOutput(out)
+    } catch (e) {
+      setError(`Run failed: ${e.message}`)
+    } finally {
+      setRunning(false)
+    }
   }
 
   return (
@@ -57,6 +84,7 @@ export default function Playground({ onSaveAsSnippet }) {
           <button className="playground-reset-btn" onClick={handleReset}>Reset</button>
         </div>
       </div>
+      {error && <div className="error-banner">{error}</div>}
       <div className="playground-code">
         <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" />
       </div>
@@ -84,6 +112,14 @@ export default function Playground({ onSaveAsSnippet }) {
           disabled={code === getLanguage(language).playgroundDefault}
         >Save</button>
       </div>
+
+      {confirmingReset && (
+        <ConfirmDialog
+          message="Reset to blank template?"
+          onConfirm={confirmReset}
+          onCancel={() => setConfirmingReset(false)}
+        />
+      )}
     </div>
   )
 }

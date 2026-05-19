@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE } from '../languages.js'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
@@ -6,23 +6,50 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx'
 export default function ListView({ onSelect, onCreate, onEdit }) {
   const [snippets, setSnippets] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [activeTag, setActiveTag] = useState(null)
   const [menuSnippet, setMenuSnippet] = useState(null)
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 })
-  const [deleting, setDeleting] = useState(false)
   const pressTimer = useRef(null)
   const didLongPress = useRef(false)
   const pressPos = useRef({ x: 0, y: 0 })
 
   const load = () => {
     setLoading(true)
+    setError(null)
     api.listSnippets()
-      .then(d => { setSnippets(d); setLoading(false) })
-      .catch(() => setLoading(false))
+      .then(d => {
+        setSnippets(d)
+        setLoading(false)
+      })
+      .catch(e => {
+        setError(`Failed to load snippets: ${e.message}`)
+        setLoading(false)
+      })
   }
 
   useEffect(load, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 150)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const openMenu = (s, e) => {
+    e.stopPropagation()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const menuW = 160
+    const menuH = 96
+    setMenuPos({
+      x: Math.min(rect.left, vw - menuW - 8),
+      y: Math.min(rect.bottom + 4, vh - menuH - 8),
+    })
+    setMenuSnippet(s)
+  }
 
   const startPress = (s, e) => {
     pressPos.current = { x: e.clientX, y: e.clientY }
@@ -51,21 +78,33 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
   const [confirmTarget, setConfirmTarget] = useState(null)
 
   const handleDelete = async () => {
-    setDeleting(true)
-    await api.deleteSnippet(confirmTarget.id)
-    setConfirmTarget(null)
-    setMenuSnippet(null)
-    setDeleting(false)
-    load()
+    try {
+      setError(null)
+      await api.deleteSnippet(confirmTarget.id)
+      setConfirmTarget(null)
+      setMenuSnippet(null)
+      load()
+    } catch (e) {
+      setError(`Delete failed: ${e.message}`)
+    }
   }
 
-  const allTags = [...new Set(snippets.flatMap(s => s.tags))].sort()
-  const q = search.toLowerCase()
-  const filtered = snippets.filter(s => {
-    const matchSearch = !q || s.title.toLowerCase().includes(q) || s.tags.some(t => t.includes(q)) || (s.notes || '').toLowerCase().includes(q)
-    const matchTag = !activeTag || s.tags.includes(activeTag)
-    return matchSearch && matchTag
-  })
+  const allTags = useMemo(() =>
+    [...new Set(snippets.flatMap(s => s.tags))].sort(),
+    [snippets]
+  )
+
+  const filtered = useMemo(() => {
+    const q = debouncedSearch.toLowerCase()
+    return snippets.filter(s => {
+      const matchSearch = !q ||
+        s.title.toLowerCase().includes(q) ||
+        s.tags.some(t => t.includes(q)) ||
+        (s.notes || '').toLowerCase().includes(q)
+      const matchTag = !activeTag || s.tags.includes(activeTag)
+      return matchSearch && matchTag
+    })
+  }, [snippets, debouncedSearch, activeTag])
 
   return (
     <div className="list-view">
@@ -80,6 +119,7 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
+        {error && <div className="error-banner">{error}</div>}
         {allTags.length > 0 && (
           <div className="tags-bar">
             {allTags.map(tag => (
@@ -108,7 +148,10 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
                 onPointerCancel={cancelPress}
                 onClick={() => handleCardClick(s.id)}
               >
-                <div className="card-title">{s.title}</div>
+                <div className="card-top">
+                  <div className="card-title">{s.title}</div>
+                  <button className="card-menu-btn" onClick={(e) => openMenu(s, e)} aria-label="Options">⋮</button>
+                </div>
                 <div className="card-meta">
                   <span className="card-files">{s.files.length} file{s.files.length !== 1 ? 's' : ''}</span>
                   <span className="card-lang">{LANGUAGES[s.language ?? DEFAULT_LANGUAGE]?.label ?? s.language}</span>
@@ -120,6 +163,7 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
             ))
         }
       </div>
+
 
       <button className="fab" onClick={onCreate}>+</button>
 
