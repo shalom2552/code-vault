@@ -26,14 +26,14 @@ export const LANGUAGES = {
   cpp: {
     ext: '.cpp',
     srcFile: 'main.cpp',
-    compile: (files, bin) => `g++ ${files.join(' ')} -o ${bin}`,
+    compile: (files, bin) => ['g++', ...files, '-o', bin],
     runner: (bin) => [bin],
     playgroundWrap: (code) => CPP_HEADERS + code,
   },
   c: {
     ext: '.c',
     srcFile: 'main.c',
-    compile: (files, bin) => `gcc ${files.join(' ')} -o ${bin}`,
+    compile: (files, bin) => ['gcc', ...files, '-o', bin],
     runner: (bin) => [bin],
     playgroundWrap: (code) => C_HEADERS + code,
   },
