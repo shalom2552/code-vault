@@ -1,25 +1,62 @@
-import { useEffect, useRef, memo } from 'react'
-import hljs from 'highlight.js/lib/core'
-import cpp from 'highlight.js/lib/languages/cpp'
-import c from 'highlight.js/lib/languages/c'
-import python from 'highlight.js/lib/languages/python'
-import 'highlight.js/styles/github-dark.css'
+import { memo, useState } from 'react'
+import CodeMirror from '@uiw/react-codemirror'
+import { cpp } from '@codemirror/lang-cpp'
+import { python } from '@codemirror/lang-python'
+import { StreamLanguage } from '@codemirror/language'
+import { shell } from '@codemirror/legacy-modes/mode/shell'
+import { oneDark } from '@codemirror/theme-one-dark'
+import { EditorView } from '@codemirror/view'
 
-hljs.registerLanguage('cpp', cpp)
-hljs.registerLanguage('c', c)
-hljs.registerLanguage('python', python)
+const readOnlyTheme = EditorView.theme({
+  '&': { height: 'auto' },
+  '.cm-scroller': { overflow: 'visible' },
+  '.cm-content': { padding: '16px 0' },
+  '.cm-line': { padding: '0 16px' },
+})
 
-function CodeBlock({ code, filename, language = 'cpp' }) {
-  const ref = useRef(null)
-  useEffect(() => {
-    if (!ref.current) return
-    ref.current.removeAttribute('data-highlighted')
-    hljs.highlightElement(ref.current)
-  }, [code, language])
+const extensionsMap = {
+  cpp: [cpp()],
+  c: [cpp()],
+  python: [python()],
+  bash: [StreamLanguage.define(shell)],
+  text: [],
+}
+
+function CodeBlock({ code, filename, language = 'cpp', fontSize = 14 }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const extensions = [
+    ...(extensionsMap[language] || extensionsMap.text),
+    readOnlyTheme,
+    EditorView.editable.of(false),
+  ]
+
   return (
-    <div className="code-block">
-      {filename && <div className="code-filename">{filename}</div>}
-      <pre><code ref={ref} className={`language-${language}`}>{code}</code></pre>
+    <div className="code-block-wrapper">
+      <div className="code-block-header">
+        {filename && <div className="code-filename">{filename}</div>}
+        <button className="copy-btn" onClick={handleCopy}>
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+      <CodeMirror
+        value={code}
+        extensions={extensions}
+        theme={oneDark}
+        basicSetup={{
+          lineNumbers: false,
+          foldGutter: false,
+          highlightActiveLine: false,
+        }}
+        style={{ fontSize: `${fontSize}px` }}
+        readOnly={true}
+      />
     </div>
   )
 }

@@ -740,3 +740,130 @@
 .playground-code .cm-scroller {
   overflow: auto;
 }
+
+/* ── Toast System ── */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+  padding: 0 16px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-size: 14px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+  animation: toast-slide-up 0.3s ease-out forwards;
+}
+.toast-success { border-left: 4px solid var(--accent); }
+.toast-error { border-left: 4px solid var(--danger); }
+.toast-info { border-left: 4px solid #42a5f5; }
+
+@keyframes toast-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ── Loading Skeletons ── */
+.skeleton-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton-card, .skeleton-detail, .skeleton-editor {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.skeleton-line {
+  background: var(--border);
+  height: 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.skeleton-line.title { height: 20px; width: 70%; }
+.skeleton-line.small { width: 40%; }
+.skeleton-line.tiny { width: 20%; }
+.skeleton-line.nav { height: 44px; margin: -16px -16px 16px; border-radius: 0; }
+.skeleton-line.tags { height: 24px; width: 50%; }
+.skeleton-line.notes { height: 60px; }
+.skeleton-block { background: var(--border); border-radius: 8px; }
+.skeleton-block.code { height: 200px; }
+.skeleton-block.form { height: 120px; margin-bottom: 12px; }
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+.empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.empty-state-title { font-size: 18px; font-weight: 600; margin: 0 0 8px; color: var(--text); }
+.empty-state-subtitle { font-size: 14px; color: var(--muted); margin: 0 0 24px; max-width: 280px; }
+
+/* ── Code Block Overrides ── */
+.code-block-wrapper {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--code-bg);
+}
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 8px 4px 16px;
+}
+.code-block-header .code-filename {
+  padding: 0;
+  border-bottom: none;
+  background: transparent;
+}
+.copy-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.1s;
+}
+.copy-btn:hover { color: var(--text); border-color: var(--muted); }
+.copy-btn:active { background: rgba(255,255,255,0.05); }
+
+/* Ensure CodeMirror in CodeBlock looks right */
+.code-block-wrapper .cm-editor {
+  background: transparent !important;
+}
