@@ -867,3 +867,76 @@
 .code-block-wrapper .cm-editor {
   background: transparent !important;
 }
+
+/* ── List header actions ── */
+.list-top-actions { display: flex; align-items: center; gap: 8px; }
+.export-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.export-btn:hover { color: var(--text); border-color: var(--muted); }
+
+/* ── Pin icon ── */
+.pin-icon { margin-right: 4px; font-size: 12px; }
+
+/* ── Compiler flags ── */
+.compiler-flags { margin-bottom: 12px; }
+.compiler-flags-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.compiler-flags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.flag-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+.flag-option input[type="checkbox"] { margin: 0; accent-color: var(--accent); }
+.flag-option:has(input:checked) { border-color: var(--accent); background: rgba(100,210,255,0.06); }
+
+/* ── Run history ── */
+.run-history { margin-top: 16px; }
+.run-history-toggle {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: 'Outfit', sans-serif;
+}
+.run-history-toggle:hover { color: var(--text); }
+.run-history-list { margin-top: 8px; display: flex; flex-direction: column; gap: 10px; }
+.run-history-entry {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.run-history-meta {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background: var(--surface);
+  font-size: 11px;
+}
+.run-history-time { color: var(--muted); }
+.run-history-exit { color: var(--muted); }
+.run-history-output { margin: 0; padding: 8px 10px; font-size: 12px; max-height: 120px; overflow-y: auto; }

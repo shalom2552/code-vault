@@ -17,6 +17,12 @@ export const LANGUAGES = {
     hljsLang: 'python',
     playgroundDefault: '# Write your code here\n',
   },
+  bash: {
+    label: 'Bash',
+    defaultFile: 'main.sh',
+    hljsLang: 'bash',
+    playgroundDefault: '#!/bin/bash\n# Write your script here\n',
+  },
 }
 
 export const DEFAULT_LANGUAGE = 'cpp'

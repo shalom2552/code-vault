@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import CodeBlock from '../components/CodeBlock.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
 import { api } from '../api.js'
 
 export default function DetailView({ id, onBack, onEdit, onDeleted }) {
@@ -11,6 +12,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
   const [runOutput, setRunOutput] = useState(null)
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   useEffect(() => {
     setSnippet(null)
@@ -39,10 +41,20 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
     try {
       const out = await api.runSnippet(id, stdin)
       setRunOutput(out)
+      setSnippet(s => s ? { ...s, runs: out.runs ?? s.runs } : s)
     } catch (e) {
       setError(`Run failed: ${e.message}`)
     } finally {
       setRunning(false)
+    }
+  }
+
+  const handlePin = async () => {
+    try {
+      const { pinned } = await api.pinSnippet(id)
+      setSnippet(s => s ? { ...s, pinned } : s)
+    } catch (e) {
+      setError(`Pin failed: ${e.message}`)
     }
   }
 
@@ -56,9 +68,14 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
     </div>
   )
 
-  if (!snippet) return <div className="loading">Loading...</div>
+  if (!snippet) return (
+    <div className="detail-view">
+      <LoadingSkeleton variant="detail" />
+    </div>
+  )
 
   const file = snippet.files[activeFile]
+  const runs = snippet.runs ?? []
 
   return (
     <div className="detail-view">
@@ -66,6 +83,9 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
         <button className="back-btn" onClick={onBack}>←</button>
         <span className="nav-title">{snippet.title}</span>
         <div className="nav-actions">
+          <button className="action-btn" onClick={handlePin} title={snippet.pinned ? 'Unpin' : 'Pin'}>
+            {snippet.pinned ? '📌' : '📍'}
+          </button>
           <button className="action-btn" onClick={onEdit}>Edit</button>
           <button className="action-btn danger" onClick={() => setConfirming(true)}>Del</button>
         </div>
@@ -104,6 +124,28 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
             {runOutput.stderr && <pre className="run-stderr">{runOutput.stderr}</pre>}
             {runOutput.stdout && <pre className="run-stdout">{runOutput.stdout}</pre>}
             <div className="exit-code">exit {runOutput.exitCode}</div>
+          </div>
+        )}
+
+        {runs.length > 0 && (
+          <div className="run-history">
+            <button className="run-history-toggle" onClick={() => setHistoryOpen(o => !o)}>
+              {historyOpen ? '▾' : '▸'} Run history ({runs.length})
+            </button>
+            {historyOpen && (
+              <div className="run-history-list">
+                {[...runs].reverse().map((r, i) => (
+                  <div key={i} className="run-history-entry">
+                    <div className="run-history-meta">
+                      <span className="run-history-time">{new Date(r.timestamp).toLocaleString()}</span>
+                      <span className="run-history-exit">exit {r.exitCode}</span>
+                    </div>
+                    {r.stderr && <pre className="run-stderr run-history-output">{r.stderr}</pre>}
+                    {r.stdout && <pre className="run-stdout run-history-output">{r.stdout}</pre>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

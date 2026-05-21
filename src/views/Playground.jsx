@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import CodeEditor from '../components/CodeEditor.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import { useToast } from '../components/ToastContext.jsx'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
 
 const storageKey = (lang) => `playground-code-${lang}`
 
 export default function Playground({ onSaveAsSnippet }) {
+  const { toast } = useToast()
   const [language, setLanguage] = useState(() => localStorage.getItem('playground-language') || DEFAULT_LANGUAGE)
   const [code, setCode] = useState(() => {
     const lang = localStorage.getItem('playground-language') || DEFAULT_LANGUAGE
@@ -63,6 +65,7 @@ export default function Playground({ onSaveAsSnippet }) {
       setOutput(out)
     } catch (e) {
       setError(`Run failed: ${e.message}`)
+      toast(`Run failed: ${e.message}`, 'error')
     } finally {
       setRunning(false)
     }

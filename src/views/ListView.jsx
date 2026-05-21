@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE } from '../languages.js'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
+import EmptyState from '../components/EmptyState.jsx'
 
 export default function ListView({ onSelect, onCreate, onEdit }) {
   const [snippets, setSnippets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [activeTag, setActiveTag] = useState(null)
   const [menuSnippet, setMenuSnippet] = useState(null)
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 })
@@ -18,28 +19,21 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
   const menuRef = useRef(null)
   const menuTriggerRef = useRef(null)
 
-  const load = () => {
+  const load = useCallback((q = '') => {
     setLoading(true)
     setError(null)
-    api.listSnippets()
-      .then(d => {
-        setSnippets(d)
-        setLoading(false)
-      })
-      .catch(e => {
-        setError(`Failed to load snippets: ${e.message}`)
-        setLoading(false)
-      })
-  }
+    api.listSnippets(q)
+      .then(d => { setSnippets(d); setLoading(false) })
+      .catch(e => { setError(`Failed to load snippets: ${e.message}`); setLoading(false) })
+  }, [])
 
-  useEffect(load, [])
+  useEffect(() => load(), [load])
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 150)
+    const timer = setTimeout(() => load(search), 300)
     return () => clearTimeout(timer)
-  }, [search])
+  }, [search, load])
 
-  // P34: focus trap + keyboard nav for context menu
   useEffect(() => {
     if (!menuSnippet || !menuRef.current) return
     const focusable = Array.from(menuRef.current.querySelectorAll('button'))
@@ -106,9 +100,24 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
       await api.deleteSnippet(confirmTarget.id)
       setConfirmTarget(null)
       setMenuSnippet(null)
-      load()
+      load(search)
     } catch (e) {
       setError(`Delete failed: ${e.message}`)
+    }
+  }
+
+  const handleExport = async () => {
+    try {
+      const data = await api.exportSnippets()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `codevault-export-${new Date().toISOString().slice(0,10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setError(`Export failed: ${e.message}`)
     }
   }
 
@@ -117,24 +126,20 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
     [snippets]
   )
 
-  const filtered = useMemo(() => {
-    const q = debouncedSearch.toLowerCase()
-    return snippets.filter(s => {
-      const matchSearch = !q ||
-        s.title.toLowerCase().includes(q) ||
-        s.tags.some(t => t.includes(q)) ||
-        (s.notes || '').toLowerCase().includes(q)
-      const matchTag = !activeTag || s.tags.includes(activeTag)
-      return matchSearch && matchTag
-    })
-  }, [snippets, debouncedSearch, activeTag])
+  const filtered = useMemo(() =>
+    !activeTag ? snippets : snippets.filter(s => s.tags.includes(activeTag)),
+    [snippets, activeTag]
+  )
 
   return (
     <div className="list-view">
       <div className="list-header">
         <div className="list-top">
           <h1 className="app-title">CodeVault</h1>
-          <span className="snippet-count">{snippets.length}</span>
+          <div className="list-top-actions">
+            <span className="snippet-count">{snippets.length}</span>
+            <button className="export-btn" onClick={handleExport} title="Export all snippets">↓</button>
+          </div>
         </div>
         <input
           className="search-input"
@@ -158,9 +163,12 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
 
       <div className="snippets-list">
         {loading
-          ? <div className="empty">Loading...</div>
+          ? [0, 1, 2].map(i => <LoadingSkeleton key={i} variant="card" />)
           : filtered.length === 0
-            ? <div className="empty">{search || activeTag ? 'No matches' : 'No snippets yet'}</div>
+            ? <EmptyState
+                title={search || activeTag ? 'No matches' : 'No snippets yet'}
+                subtitle={search || activeTag ? 'Try a different search or tag.' : 'Tap + to create your first snippet.'}
+              />
             : filtered.map(s => (
               <div
                 key={s.id}
@@ -175,7 +183,10 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
                 onClick={() => handleCardClick(s.id)}
               >
                 <div className="card-top">
-                  <div className="card-title">{s.title}</div>
+                  <div className="card-title">
+                    {s.pinned && <span className="pin-icon" title="Pinned">📌</span>}
+                    {s.title}
+                  </div>
                   <button className="card-menu-btn" onClick={(e) => openMenu(s, e)} aria-label="Options">⋮</button>
                 </div>
                 <div className="card-meta">
@@ -189,7 +200,6 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
             ))
         }
       </div>
-
 
       <button className="fab" onClick={onCreate}>+</button>
 

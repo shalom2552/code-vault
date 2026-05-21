@@ -1,19 +1,32 @@
 import { useState, useEffect } from 'react'
 import CodeEditor from '../components/CodeEditor.jsx'
+import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
+import { useToast } from '../components/ToastContext.jsx'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
+
+const COMPILER_FLAGS = [
+  '-O0', '-O1', '-O2', '-O3',
+  '-Wall', '-Wextra', '-Werror',
+  '-std=c++17', '-std=c++20', '-std=c++23',
+  '-std=c11', '-std=c99',
+  '-lm', '-lpthread',
+  '-g', '-DDEBUG',
+]
 
 const makeKey = () => Math.random().toString(36).slice(2, 11)
 const emptyFile = (language) => ({ _key: makeKey(), name: getLanguage(language).defaultFile, content: '' })
 
 export default function EditorView({ snippetId, initialData, onSave, onBack }) {
   const isEdit = Boolean(snippetId)
+  const { toast } = useToast()
+  const [loadingEdit, setLoadingEdit] = useState(isEdit)
   const [form, setForm] = useState(() => {
     const language = initialData?.language ?? DEFAULT_LANGUAGE
     const files = initialData
       ? [{ _key: getLanguage(language).defaultFile, name: getLanguage(language).defaultFile, content: initialData.code }]
       : [emptyFile(language)]
-    return { title: '', tags: '', notes: '', language, files }
+    return { title: '', tags: '', notes: '', language, files, compilerFlags: [] }
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -29,10 +42,13 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
         notes: d.notes || '',
         language: d.language ?? DEFAULT_LANGUAGE,
         files: d.files.map(f => ({ ...f, _key: f.name })),
+        compilerFlags: d.compilerFlags ?? [],
       })
+      setLoadingEdit(false)
     }).catch(e => {
       if (ignored) return
       setError(`Failed to load snippet: ${e.message}`)
+      setLoadingEdit(false)
     })
     return () => { ignored = true }
   }, [snippetId, isEdit])
@@ -50,6 +66,16 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
       files: f.files.map((file, i) =>
         i === 0 && !isEdit ? { ...file, name: getLanguage(language).defaultFile } : file
       ),
+      compilerFlags: [],
+    }))
+  }
+
+  const toggleFlag = (flag) => {
+    setForm(f => ({
+      ...f,
+      compilerFlags: f.compilerFlags.includes(flag)
+        ? f.compilerFlags.filter(fl => fl !== flag)
+        : [...f.compilerFlags, flag],
     }))
   }
 
@@ -76,17 +102,28 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
         files: form.files
           .filter(f => f.name)
           .map(({ _key: _, ...f }) => f),
+        compilerFlags: form.compilerFlags,
       }
       const saved = isEdit
         ? await api.updateSnippet(snippetId, body)
         : await api.createSnippet(body)
+      toast(isEdit ? 'Snippet updated' : 'Snippet created', 'success')
       onSave(saved.id)
     } catch (e) {
       setError(`Save failed: ${e.message}`)
+      toast(`Save failed: ${e.message}`, 'error')
     } finally {
       setSaving(false)
     }
   }
+
+  if (loadingEdit) return (
+    <div className="editor-view">
+      <LoadingSkeleton variant="editor" />
+    </div>
+  )
+
+  const showFlags = form.language === 'cpp' || form.language === 'c'
 
   return (
     <div className="editor-view">
@@ -102,15 +139,33 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
       </div>
 
       <div className="editor-form">
-        <input className="form-input" placeholder="Title" value={form.title} onChange={set('title')} />
+        <input className="form-input" placeholder="Title" value={form.title} onChange={set('title')} maxLength={100} />
         <input className="form-input" placeholder="Tags — comma separated" value={form.tags} onChange={set('tags')} />
-        <textarea className="form-textarea" placeholder="Notes (optional)" value={form.notes} onChange={set('notes')} rows={3} />
+        <textarea className="form-textarea" placeholder="Notes (optional)" value={form.notes} onChange={set('notes')} rows={3} maxLength={5000} />
 
         <select className="form-select" value={form.language} onChange={handleLanguageChange}>
           {Object.entries(LANGUAGES).map(([id, lang]) => (
             <option key={id} value={id}>{lang.label}</option>
           ))}
         </select>
+
+        {showFlags && (
+          <div className="compiler-flags">
+            <div className="compiler-flags-label">Compiler flags</div>
+            <div className="compiler-flags-grid">
+              {COMPILER_FLAGS.map(flag => (
+                <label key={flag} className="flag-option">
+                  <input
+                    type="checkbox"
+                    checked={form.compilerFlags.includes(flag)}
+                    onChange={() => toggleFlag(flag)}
+                  />
+                  <span>{flag}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="files-section">
           {form.files.map(f => (

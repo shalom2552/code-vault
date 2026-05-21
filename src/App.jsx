@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense } from 'react'
 import ListView from './views/ListView.jsx'
+import { ToastProvider } from './components/ToastContext.jsx'
 import './App.css'
 
 const DetailView = lazy(() => import('./views/DetailView.jsx'))
@@ -59,6 +60,7 @@ export default function App() {
   const inSnippetDetail = tab === TABS.SNIPPETS && view !== VIEWS.LIST
 
   return (
+    <ToastProvider>
     <div className="app">
       <div className="tab-content">
         <Suspense fallback={<div className="view-loader">Loading...</div>}>
@@ -102,5 +104,6 @@ export default function App() {
         </nav>
       )}
     </div>
+    </ToastProvider>
   )
 }

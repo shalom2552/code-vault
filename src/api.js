@@ -6,7 +6,9 @@ const parseResponse = async (res) => {
 }
 
 export const api = {
-  listSnippets: () => fetch('/api/snippets').then(parseResponse),
+  listSnippets: (q = '') => fetch(`/api/snippets${q ? `?q=${encodeURIComponent(q)}` : ''}`).then(parseResponse),
+  exportSnippets: () => fetch('/api/export').then(parseResponse),
+  pinSnippet: (id) => fetch(`/api/snippets/${encodeURIComponent(id)}/pin`, { method: 'PATCH' }).then(parseResponse),
   getSnippet: (id) => fetch(`/api/snippets/${encodeURIComponent(id)}`).then(parseResponse),
   createSnippet: (body) => fetch('/api/snippets', {
     method: 'POST',
