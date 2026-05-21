@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import CodeEditor from '../components/CodeEditor.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
-import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
 import { useToast } from '../components/ToastContext.jsx'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
