@@ -6,7 +6,18 @@ import rateLimit from 'express-rate-limit'
 import { getLanguage, isValidLanguage, DEFAULT_LANGUAGE } from './languages.js'
 import { compileCode, runCode } from './executor.js'
 
-const validId = (id) => /^[a-zA-Z0-9-]+$/.test(id)
+const validId = (id) => /^[a-z0-9_-]+$/.test(id)
+
+function makeSlug(title) {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 40)
+    || 'snippet'
+  const hash = randomUUID().replace(/-/g, '').slice(0, 8)
+  return `${slug}_${hash}`
+}
 // P16: reject dot-prefix names (.env, .bashrc)
 const validFilename = (n) => /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(n) && !n.includes('..')
 
@@ -77,7 +88,7 @@ export default function snippetRoutes(DATA_DIR) {
       if (tagErr) return res.status(400).json({ error: tagErr })
     }
 
-    const id = randomUUID()
+    const id = makeSlug(title.trim())
     const now = new Date().toISOString()
     const language = isValidLanguage(req.body.language) ? req.body.language : DEFAULT_LANGUAGE
     const validFiles = files.filter(f => validFilename(f.name))
