@@ -3,7 +3,7 @@
   --surface: #161616;
   --border: #222;
   --text: #e0e0e0;
-  --muted: #555;
+  --muted: #888;
   --accent: #b8f542;
   --danger: #f54242;
   --code-bg: #0d0d0d;
@@ -261,7 +261,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(184, 245, 66, 0.3);
+  box-shadow: 0 2px 8px rgba(184, 245, 66, 0.2);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -712,6 +712,64 @@
   height: 100%;
 }
 .playground-save-btn:disabled { opacity: 0.3; cursor: default; }
+
+/* ── Pin button (card list) ── */
+.pin-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  padding: 0 4px 0 0;
+  cursor: pointer;
+  line-height: 1;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+}
+.pin-btn.pinned { color: var(--accent); }
+.pin-btn:hover { color: var(--text); }
+
+/* ── Nav timestamps ── */
+.nav-timestamps {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Skeleton meta row ── */
+.skeleton-meta {
+  display: flex;
+  gap: 8px;
+}
+.skeleton-meta .skeleton-line { margin-bottom: 0; }
+
+/* ── EditorView nav actions + inline error ── */
+.nav-actions-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.inline-error {
+  font-size: 12px;
+  color: var(--danger);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Error banner ── */
+.error-banner {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  border-radius: 6px;
+  color: var(--danger);
+  font-size: 13px;
+  padding: 8px 12px;
+  margin: 8px 16px;
+}
 
 /* ── CodeMirror overrides ── */
 .cm-editor {

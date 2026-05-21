@@ -17,7 +17,7 @@ const COMPILER_FLAGS = [
 const makeKey = () => Math.random().toString(36).slice(2, 11)
 const emptyFile = (language) => ({ _key: makeKey(), name: getLanguage(language).defaultFile, content: '' })
 
-export default function EditorView({ snippetId, initialData, onSave, onBack }) {
+export default function EditorView({ snippetId, initialData, onSave, onBack, fontSize = 14 }) {
   const isEdit = Boolean(snippetId)
   const { toast } = useToast()
   const [loadingEdit, setLoadingEdit] = useState(isEdit)
@@ -203,6 +203,7 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
                 onChange={val => updateFile(f._key, 'content', val)}
                 language={form.language}
                 autoHeight
+                fontSize={fontSize}
               />
             </div>
           ))}

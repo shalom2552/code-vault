@@ -8,7 +8,7 @@ import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
 
 const storageKey = (lang) => `playground-code-${lang}`
 
-export default function Playground({ onSaveAsSnippet }) {
+export default function Playground({ onSaveAsSnippet, fontSize = 14 }) {
   const { toast } = useToast()
   const [language, setLanguage] = useState(() => localStorage.getItem('playground-language') || DEFAULT_LANGUAGE)
   const [code, setCode] = useState(() => {
@@ -95,7 +95,7 @@ export default function Playground({ onSaveAsSnippet }) {
       </div>
       {error && <div className="error-banner">{error}</div>}
       <div className="playground-code">
-        <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" />
+        <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" fontSize={fontSize} />
       </div>
       
       {running && (

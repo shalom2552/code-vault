@@ -5,7 +5,7 @@ import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
 import { useToast } from '../components/ToastContext.jsx'
 import { api } from '../api.js'
 
-export default function DetailView({ id, onBack, onEdit, onDeleted }) {
+export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 14 }) {
   const [snippet, setSnippet] = useState(null)
   const [activeFile, setActiveFile] = useState(0)
   const [stdin, setStdin] = useState('')
@@ -17,10 +17,12 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
   const { toast } = useToast()
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     setSnippet(null)
     setError(null)
     setActiveFile(0)
     setRunOutput(null)
+    /* eslint-enable react-hooks/set-state-in-effect */
     api.getSnippet(id)
       .then(setSnippet)
       .catch(e => setError(e.message))
@@ -116,8 +118,8 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
         <button className="back-btn" onClick={onBack}>←</button>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, margin: '0 1rem' }}>
           <span className="nav-title">{snippet.title}</span>
-          <span className="nav-timestamps" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Created: {new Date(snippet.createdAt).toLocaleString()} | Updated: {new Date(snippet.updatedAt).toLocaleString()}
+          <span className="nav-timestamps">
+            Created: {new Date(snippet.createdAt).toLocaleString()} · Updated: {new Date(snippet.updatedAt).toLocaleString()}
           </span>
         </div>
         <div className="nav-actions">
@@ -157,7 +159,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
           </div>
         )}
 
-        <CodeBlock code={file?.content || ''} filename={snippet.files.length === 1 ? file?.name : null} language={snippet.language ?? 'cpp'} />
+        <CodeBlock code={file?.content || ''} filename={snippet.files.length === 1 ? file?.name : null} language={snippet.language ?? 'cpp'} fontSize={fontSize} />
 
         {runOutput && (
           <div className="run-output">

@@ -90,7 +90,7 @@ export default function App() {
   useKeyboardShortcuts({
     isInEditor,
     isInDetail,
-    isInPlayground,
+    isInPlayground: isPlayground,
     onBack: handleBack,
   })
 
@@ -128,22 +128,23 @@ export default function App() {
         <div className={`main-pane${showingList ? ' main-pane-mobile-hidden' : ''}`}>
           <Suspense fallback={<div className="view-loader">Loading…</div>}>
             {isSnippets && view === VIEWS.DETAIL && (
-              <DetailView id={selectedId} onBack={goList} onEdit={goEdit} onDeleted={goList} />
+              <DetailView id={selectedId} onBack={goList} onEdit={goEdit} onDeleted={goList} fontSize={fontSize} />
             )}
             {isSnippets && view === VIEWS.CREATE && (
               <EditorView
                 initialData={playgroundSeed}
                 onSave={goDetail}
                 onBack={playgroundSeed ? goPlayground : goList}
+                fontSize={fontSize}
               />
             )}
             {isSnippets && view === VIEWS.EDIT && (
-              <EditorView snippetId={selectedId} onSave={goDetail} onBack={() => setView(VIEWS.DETAIL)} />
+              <EditorView snippetId={selectedId} onSave={goDetail} onBack={() => setView(VIEWS.DETAIL)} fontSize={fontSize} />
             )}
             {isSnippets && view === VIEWS.EDIT_FROM_LIST && (
-              <EditorView snippetId={selectedId} onSave={goDetail} onBack={goList} />
+              <EditorView snippetId={selectedId} onSave={goDetail} onBack={goList} fontSize={fontSize} />
             )}
-            {isPlayground && <Playground onSaveAsSnippet={goCreateFromPlayground} />}
+            {isPlayground && <Playground onSaveAsSnippet={goCreateFromPlayground} fontSize={fontSize} />}
             {isSnippets && view === VIEWS.LIST && (
               <div className="detail-empty">
                 <EmptyState
