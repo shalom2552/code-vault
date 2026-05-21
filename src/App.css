@@ -940,3 +940,138 @@
 .run-history-time { color: var(--muted); }
 .run-history-exit { color: var(--muted); }
 .run-history-output { margin: 0; padding: 8px 10px; font-size: 12px; max-height: 120px; overflow-y: auto; }
+
+/* ── Two-pane layout ── */
+.list-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.list-pane-mobile-hidden { display: none; }
+
+.main-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.main-pane-mobile-hidden { display: none; }
+
+@media (min-width: 900px) {
+  .app {
+    max-width: none;
+    flex-direction: row;
+  }
+  .list-pane {
+    width: 350px;
+    min-width: 350px;
+    max-width: 350px;
+    flex: none;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  /* Always show both panes on desktop */
+  .list-pane-mobile-hidden { display: flex !important; }
+  .main-pane-mobile-hidden { display: flex !important; }
+  /* Hide mobile bottom nav */
+  .bottom-nav { display: none !important; }
+  /* FAB contained within list pane */
+  .list-pane .fab {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+/* ── Detail empty state (desktop right pane when nothing selected) ── */
+.detail-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+/* ── View loader ── */
+.view-loader {
+  color: var(--muted);
+  padding: 40px;
+  text-align: center;
+}
+
+/* ── Desktop nav bar (left pane header) ── */
+.desktop-bar {
+  display: none;
+}
+@media (min-width: 900px) {
+  .desktop-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+}
+.desktop-tabs {
+  display: flex;
+  gap: 2px;
+}
+.desktop-tab {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.1s, background-color 0.1s;
+}
+.desktop-tab:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.05);
+}
+.desktop-tab.active { color: var(--accent); }
+
+/* ── Font size toggle button (desktop bar) ── */
+.font-toggle-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.1s, border-color 0.1s;
+}
+.font-toggle-btn:hover { color: var(--text); border-color: var(--muted); }
+.font-size-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* ── Mobile font toggle (in bottom nav) ── */
+.font-toggle-label {
+  font-size: 16px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Font size overrides for CodeMirror ── */
+.font-size-12 .cm-editor { font-size: 12px !important; }
+.font-size-14 .cm-editor { font-size: 14px !important; }
+.font-size-16 .cm-editor { font-size: 16px !important; }
