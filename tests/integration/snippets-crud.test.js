@@ -89,17 +89,17 @@ describe('snippets CRUD', () => {
       expect(res.status).toBe(400)
     })
 
-    it('defaults title to Untitled when omitted', async () => {
+    it('returns 400 when title is missing', async () => {
       const res = await request(app)
         .post('/api/snippets')
         .send({ files: [{ name: 'main.cpp', content: '' }] })
-      expect(res.body.title).toBe('Untitled')
+      expect(res.status).toBe(400)
     })
 
     it('defaults language to cpp when omitted', async () => {
       const res = await request(app)
         .post('/api/snippets')
-        .send({ files: [{ name: 'main.cpp', content: '' }] })
+        .send({ title: 'No language', files: [{ name: 'main.cpp', content: '' }] })
       expect(res.body.language).toBe('cpp')
     })
 

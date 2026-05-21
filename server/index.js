@@ -40,7 +40,7 @@ async function main() {
   }
 
   // P31: global error handler — catches async errors Express 5 propagates via next(err)
-  app.use((err, req, res, next) => {
+  app.use((err, req, res, _next) => {
     console.error('unhandled error', err)
     if (!res.headersSent) res.status(500).json({ error: 'Internal server error' })
   })

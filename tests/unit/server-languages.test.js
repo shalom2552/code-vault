@@ -24,7 +24,7 @@ describe('server language registry', () => {
     it('srcFile is main.cpp', () => expect(lang.srcFile).toBe('main.cpp'))
 
     it('compile uses g++', () => {
-      expect(lang.compile(['a.cpp'], '/out')).toMatch(/^g\+\+/)
+      expect(lang.compile(['a.cpp'], '/out')[0]).toBe('g++')
     })
 
     it('compile includes all source files and output path', () => {
@@ -59,7 +59,7 @@ describe('server language registry', () => {
     it('srcFile is main.c', () => expect(lang.srcFile).toBe('main.c'))
 
     it('compile uses gcc', () => {
-      expect(lang.compile(['a.c'], '/out')).toMatch(/^gcc/)
+      expect(lang.compile(['a.c'], '/out')[0]).toBe('gcc')
     })
 
     it('compile includes source file and output path', () => {

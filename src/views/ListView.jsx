@@ -15,6 +15,8 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
   const pressTimer = useRef(null)
   const didLongPress = useRef(false)
   const pressPos = useRef({ x: 0, y: 0 })
+  const menuRef = useRef(null)
+  const menuTriggerRef = useRef(null)
 
   const load = () => {
     setLoading(true)
@@ -37,8 +39,29 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
     return () => clearTimeout(timer)
   }, [search])
 
+  // P34: focus trap + keyboard nav for context menu
+  useEffect(() => {
+    if (!menuSnippet || !menuRef.current) return
+    const focusable = Array.from(menuRef.current.querySelectorAll('button'))
+    focusable[0]?.focus()
+    const handleKey = (e) => {
+      if (e.key === 'Escape') { setMenuSnippet(null); return }
+      if (e.key === 'Tab' && focusable.length > 1) {
+        const first = focusable[0], last = focusable[focusable.length - 1]
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => {
+      window.removeEventListener('keydown', handleKey)
+      menuTriggerRef.current?.focus()
+    }
+  }, [menuSnippet])
+
   const openMenu = (s, e) => {
     e.stopPropagation()
+    menuTriggerRef.current = e.currentTarget
     const rect = e.currentTarget.getBoundingClientRect()
     const vw = window.innerWidth
     const vh = window.innerHeight
@@ -142,6 +165,9 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
               <div
                 key={s.id}
                 className="snippet-card"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(s.id) } }}
                 onPointerDown={(e) => startPress(s, e)}
                 onPointerUp={cancelPress}
                 onPointerLeave={cancelPress}
@@ -177,7 +203,7 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
 
       {menuSnippet && (
         <div className="ctx-overlay" onClick={() => setMenuSnippet(null)}>
-          <div className="ctx-menu" style={{ left: menuPos.x, top: menuPos.y }} onClick={e => e.stopPropagation()}>
+          <div className="ctx-menu" ref={menuRef} style={{ left: menuPos.x, top: menuPos.y }} onClick={e => e.stopPropagation()}>
             <button className="ctx-item" onClick={() => { setMenuSnippet(null); onEdit(menuSnippet.id) }}>Edit</button>
             <button className="ctx-item ctx-item-danger" onClick={() => setConfirmTarget(menuSnippet)}>Delete</button>
           </div>

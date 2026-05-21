@@ -1,5 +1,4 @@
 import { spawn } from 'child_process'
-import fs from 'fs/promises'
 
 const TIMEOUT_MS = 10_000
 const COMPILE_TIMEOUT_MS = 15_000
