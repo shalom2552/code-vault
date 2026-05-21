@@ -7,9 +7,33 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       devOptions: { enabled: false },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'],
       manifestFilename: 'manifest.json',
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /^\/api\/snippets(\/[^/]+)?(\?.*)?$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-snippets',
+              networkTimeoutSeconds: 10,
+              expiration: { maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\.(js|css|png|svg|ico|woff2?)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'static-assets',
+              expiration: { maxEntries: 100, maxAgeSeconds: 7 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
       manifest: {
         name: 'CodeVault',
         short_name: 'CodeVault',
