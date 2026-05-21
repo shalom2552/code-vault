@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import CodeEditor from '../components/CodeEditor.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
 import { useToast } from '../components/ToastContext.jsx'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
@@ -63,6 +64,11 @@ export default function Playground({ onSaveAsSnippet }) {
     try {
       const out = await api.runPlayground(code, stdin, language)
       setOutput(out)
+      if (out.exitCode === 0) {
+        toast('Run completed successfully', 'success')
+      } else {
+        toast(`Run failed with exit code ${out.exitCode}`, 'error')
+      }
     } catch (e) {
       setError(`Run failed: ${e.message}`)
       toast(`Run failed: ${e.message}`, 'error')
@@ -91,7 +97,14 @@ export default function Playground({ onSaveAsSnippet }) {
       <div className="playground-code">
         <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" />
       </div>
-      {output && (
+      
+      {running && (
+        <div className="run-output playground-output">
+          <LoadingSkeleton variant="detail" />
+        </div>
+      )}
+      
+      {!running && output && (
         <div className="run-output playground-output">
           {output.stderr && <pre className="run-stderr">{output.stderr}</pre>}
           {output.stdout && <pre className="run-stdout">{output.stdout}</pre>}

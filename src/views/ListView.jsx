@@ -4,6 +4,7 @@ import { LANGUAGES, DEFAULT_LANGUAGE } from '../languages.js'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import { useToast } from '../components/ToastContext.jsx'
 
 export default function ListView({ onSelect, onCreate, onEdit }) {
   const [snippets, setSnippets] = useState([])
@@ -11,6 +12,8 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState(null)
+  const [activeLanguage, setActiveLanguage] = useState(null)
+  const [sortBy, setSortBy] = useState(() => localStorage.getItem('list-sort') || 'Recent')
   const [menuSnippet, setMenuSnippet] = useState(null)
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 })
   const pressTimer = useRef(null)
@@ -18,14 +21,19 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
   const pressPos = useRef({ x: 0, y: 0 })
   const menuRef = useRef(null)
   const menuTriggerRef = useRef(null)
+  const { toast } = useToast()
 
   const load = useCallback((q = '') => {
     setLoading(true)
     setError(null)
     api.listSnippets(q)
       .then(d => { setSnippets(d); setLoading(false) })
-      .catch(e => { setError(`Failed to load snippets: ${e.message}`); setLoading(false) })
-  }, [])
+      .catch(e => { 
+        setError(`Failed to load snippets: ${e.message}`)
+        toast(`Failed to load snippets: ${e.message}`, 'error')
+        setLoading(false) 
+      })
+  }, [toast])
 
   useEffect(() => load(), [load])
 
@@ -33,6 +41,10 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
     const timer = setTimeout(() => load(search), 300)
     return () => clearTimeout(timer)
   }, [search, load])
+
+  useEffect(() => {
+    localStorage.setItem('list-sort', sortBy)
+  }, [sortBy])
 
   useEffect(() => {
     if (!menuSnippet || !menuRef.current) return
@@ -98,11 +110,13 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
     try {
       setError(null)
       await api.deleteSnippet(confirmTarget.id)
+      toast(`Deleted "${confirmTarget.title}"`, 'success')
       setConfirmTarget(null)
       setMenuSnippet(null)
       load(search)
     } catch (e) {
       setError(`Delete failed: ${e.message}`)
+      toast(`Delete failed: ${e.message}`, 'error')
     }
   }
 
@@ -116,8 +130,21 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
       a.download = `codevault-export-${new Date().toISOString().slice(0,10)}.json`
       a.click()
       URL.revokeObjectURL(url)
+      toast('Export successful', 'success')
     } catch (e) {
       setError(`Export failed: ${e.message}`)
+      toast(`Export failed: ${e.message}`, 'error')
+    }
+  }
+
+  const handlePin = async (e, s) => {
+    e.stopPropagation()
+    try {
+      await api.pinSnippet(s.id)
+      toast(s.pinned ? 'Snippet unpinned' : 'Snippet pinned', 'success')
+      load(search)
+    } catch (err) {
+      toast(`Pin failed: ${err.message}`, 'error')
     }
   }
 
@@ -126,10 +153,36 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
     [snippets]
   )
 
-  const filtered = useMemo(() =>
-    !activeTag ? snippets : snippets.filter(s => s.tags.includes(activeTag)),
-    [snippets, activeTag]
-  )
+  const allLanguages = useMemo(() => {
+    const langs = new Set(snippets.map(s => s.language ?? DEFAULT_LANGUAGE))
+    return [...langs].sort()
+  }, [snippets])
+
+  const sortedAndFiltered = useMemo(() => {
+    let result = snippets
+
+    if (activeTag) {
+      result = result.filter(s => s.tags.includes(activeTag))
+    }
+    
+    if (activeLanguage) {
+      result = result.filter(s => (s.language ?? DEFAULT_LANGUAGE) === activeLanguage)
+    }
+
+    result = [...result].sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+      
+      switch (sortBy) {
+        case 'Oldest': return new Date(a.createdAt) - new Date(b.createdAt)
+        case 'A-Z': return a.title.localeCompare(b.title)
+        case 'Z-A': return b.title.localeCompare(a.title)
+        case 'Recent':
+        default: return new Date(b.createdAt) - new Date(a.createdAt)
+      }
+    })
+
+    return result
+  }, [snippets, activeTag, activeLanguage, sortBy])
 
   return (
     <div className="list-view">
@@ -138,6 +191,12 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
           <h1 className="app-title">CodeVault</h1>
           <div className="list-top-actions">
             <span className="snippet-count">{snippets.length}</span>
+            <select className="form-select" value={sortBy} onChange={e => setSortBy(e.target.value)} title="Sort snippets">
+              <option value="Recent">Recent</option>
+              <option value="Oldest">Oldest</option>
+              <option value="A-Z">A-Z</option>
+              <option value="Z-A">Z-A</option>
+            </select>
             <button className="export-btn" onClick={handleExport} title="Export all snippets">↓</button>
           </div>
         </div>
@@ -148,6 +207,21 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
           onChange={e => setSearch(e.target.value)}
         />
         {error && <div className="error-banner">{error}</div>}
+        
+        {allLanguages.length > 0 && (
+          <div className="tags-bar">
+            {allLanguages.map(lang => (
+              <button
+                key={lang}
+                className={`tag-chip${activeLanguage === lang ? ' active' : ''}`}
+                onClick={() => setActiveLanguage(activeLanguage === lang ? null : lang)}
+              >
+                {LANGUAGES[lang]?.label ?? lang}
+              </button>
+            ))}
+          </div>
+        )}
+
         {allTags.length > 0 && (
           <div className="tags-bar">
             {allTags.map(tag => (
@@ -155,7 +229,9 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
                 key={tag}
                 className={`tag-chip${activeTag === tag ? ' active' : ''}`}
                 onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-              >{tag}</button>
+              >
+                #{tag}
+              </button>
             ))}
           </div>
         )}
@@ -164,12 +240,14 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
       <div className="snippets-list">
         {loading
           ? [0, 1, 2].map(i => <LoadingSkeleton key={i} variant="card" />)
-          : filtered.length === 0
+          : sortedAndFiltered.length === 0
             ? <EmptyState
-                title={search || activeTag ? 'No matches' : 'No snippets yet'}
-                subtitle={search || activeTag ? 'Try a different search or tag.' : 'Tap + to create your first snippet.'}
+                title={search || activeTag || activeLanguage ? 'No matches' : 'No snippets yet'}
+                subtitle={search || activeTag || activeLanguage ? 'Try a different search, tag, or language.' : 'Tap + to create your first snippet.'}
+                actionLabel="Create snippet"
+                onAction={onCreate}
               />
-            : filtered.map(s => (
+            : sortedAndFiltered.map(s => (
               <div
                 key={s.id}
                 className="snippet-card"
@@ -184,7 +262,14 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
               >
                 <div className="card-top">
                   <div className="card-title">
-                    {s.pinned && <span className="pin-icon" title="Pinned">📌</span>}
+                    <button 
+                      className={`pin-btn ${s.pinned ? 'pinned' : ''}`} 
+                      onClick={(e) => handlePin(e, s)}
+                      title={s.pinned ? "Unpin" : "Pin"}
+                      aria-label={s.pinned ? "Unpin snippet" : "Pin snippet"}
+                    >
+                      {s.pinned ? '★' : '☆'}
+                    </button>
                     {s.title}
                   </div>
                   <button className="card-menu-btn" onClick={(e) => openMenu(s, e)} aria-label="Options">⋮</button>
