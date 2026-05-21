@@ -26,14 +26,14 @@ export const LANGUAGES = {
   cpp: {
     ext: '.cpp',
     srcFile: 'main.cpp',
-    compile: (files, bin) => ['g++', ...files, '-o', bin],
+    compile: (files, bin, flags = []) => ['g++', ...files, ...flags, '-o', bin],
     runner: (bin) => [bin],
     playgroundWrap: (code) => CPP_HEADERS + code,
   },
   c: {
     ext: '.c',
     srcFile: 'main.c',
-    compile: (files, bin) => ['gcc', ...files, '-o', bin],
+    compile: (files, bin, flags = []) => ['gcc', ...files, ...flags, '-o', bin],
     runner: (bin) => [bin],
     playgroundWrap: (code) => C_HEADERS + code,
   },
@@ -42,6 +42,13 @@ export const LANGUAGES = {
     srcFile: 'main.py',
     compile: null,
     runner: (_bin, srcFiles) => ['python3', srcFiles[0]],
+    playgroundWrap: (code) => code,
+  },
+  bash: {
+    ext: '.sh',
+    srcFile: 'main.sh',
+    compile: null,
+    runner: (_bin, srcFiles) => ['/bin/sh', srcFiles[0]],
     playgroundWrap: (code) => code,
   },
 }

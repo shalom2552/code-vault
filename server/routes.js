@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto'
 import rateLimit from 'express-rate-limit'
 import { getLanguage, isValidLanguage, DEFAULT_LANGUAGE } from './languages.js'
 import { compileCode, runCode } from './executor.js'
+import * as log from './log.js'
 
 const validId = (id) => /^[a-z0-9_-]+$/.test(id)
 
@@ -18,6 +19,7 @@ function makeSlug(title) {
   const hash = randomUUID().replace(/-/g, '').slice(0, 8)
   return `${slug}_${hash}`
 }
+
 // P16: reject dot-prefix names (.env, .bashrc)
 const validFilename = (n) => /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(n) && !n.includes('..')
 
@@ -32,27 +34,69 @@ function validateTags(tags) {
   return null
 }
 
+const ALLOWED_FLAGS = new Set([
+  '-O0', '-O1', '-O2', '-O3',
+  '-Wall', '-Wextra', '-Werror',
+  '-std=c++17', '-std=c++20', '-std=c++23',
+  '-std=c11', '-std=c99',
+  '-lm', '-lpthread',
+  '-g', '-DDEBUG',
+])
+
+function validateCompilerFlags(flags) {
+  if (!Array.isArray(flags)) return 'compilerFlags must be an array'
+  const invalid = flags.filter(f => !ALLOWED_FLAGS.has(f))
+  if (invalid.length) return `Disallowed flags: ${invalid.join(', ')}`
+  return null
+}
+
+const MAX_RUN_OUTPUT = 2000
+
 export default function snippetRoutes(DATA_DIR) {
   const router = express.Router()
   const dir = (id) => path.join(DATA_DIR, id)
 
   // P20: log DATA_DIR creation failure instead of swallowing
-  fs.mkdir(DATA_DIR, { recursive: true }).catch(e => console.error('DATA_DIR mkdir failed', e))
+  fs.mkdir(DATA_DIR, { recursive: true }).catch(e => log.error('DATA_DIR mkdir failed', e))
+
+  router.get('/health', (_req, res) => res.json({ status: 'ok' }))
 
   router.get('/snippets', async (req, res) => {
     try {
       const entries = await fs.readdir(DATA_DIR)
+      const q = req.query.q?.toLowerCase().trim()
+
       const snippets = await Promise.all(entries.map(async (id) => {
         try {
-          return JSON.parse(await fs.readFile(path.join(DATA_DIR, id, 'meta.json'), 'utf-8'))
+          const meta = JSON.parse(await fs.readFile(path.join(DATA_DIR, id, 'meta.json'), 'utf-8'))
+          if (!q) return meta
+
+          const inMeta =
+            meta.title?.toLowerCase().includes(q) ||
+            meta.notes?.toLowerCase().includes(q) ||
+            meta.tags?.some(t => t.toLowerCase().includes(q))
+          if (inMeta) return meta
+
+          for (const fname of (meta.files ?? [])) {
+            try {
+              const content = await fs.readFile(path.join(DATA_DIR, id, fname), 'utf-8')
+              if (content.toLowerCase().includes(q)) return meta
+            } catch {}
+          }
+          return null
         } catch { return null }
       }))
-      // P8: null-safe updatedAt — prevents TypeError crash that silently returns []
-      res.json(snippets.filter(Boolean).sort((a, b) =>
-        (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')
-      ))
+
+      // P8: null-safe updatedAt; pinned items sort first
+      const filtered = snippets.filter(Boolean)
+      filtered.sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1
+        if (!a.pinned && b.pinned) return 1
+        return (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')
+      })
+      res.json(filtered)
     } catch (e) {
-      console.error('[routes] GET /snippets failed', e)  // P21
+      log.error('[routes] GET /snippets failed', e)
       res.json([])
     }
   })
@@ -68,8 +112,28 @@ export default function snippetRoutes(DATA_DIR) {
       })))
       res.json({ ...meta, files })
     } catch (e) {
-      console.error('[routes] GET /snippets/:id failed', { id }, e)  // P21
+      log.error('[routes] GET /snippets/:id failed', { id }, e)
       res.status(404).json({ error: 'Not found' })
+    }
+  })
+
+  router.get('/export', async (req, res) => {
+    try {
+      const entries = await fs.readdir(DATA_DIR)
+      const snippets = await Promise.all(entries.map(async (id) => {
+        try {
+          const meta = JSON.parse(await fs.readFile(path.join(DATA_DIR, id, 'meta.json'), 'utf-8'))
+          const files = await Promise.all((meta.files ?? []).map(async (name) => ({
+            name,
+            content: await fs.readFile(path.join(DATA_DIR, id, name), 'utf-8').catch(() => ''),
+          })))
+          return { ...meta, files }
+        } catch { return null }
+      }))
+      res.json(snippets.filter(Boolean))
+    } catch (e) {
+      log.error('[routes] GET /export failed', e)
+      res.status(500).json({ error: 'Export failed' })
     }
   })
 
@@ -80,12 +144,19 @@ export default function snippetRoutes(DATA_DIR) {
     if (!title || typeof title !== 'string' || !title.trim()) {
       return res.status(400).json({ error: 'Title required' })
     }
+    if (title.trim().length > 100) return res.status(400).json({ error: 'Title too long (max 100)' })
+    if (notes && notes.length > 5000) return res.status(400).json({ error: 'Notes too long (max 5000)' })
     if (!files?.length) return res.status(400).json({ error: 'No files' })
 
     // P15: tags validation
     if (tags !== undefined) {
       const tagErr = validateTags(tags)
       if (tagErr) return res.status(400).json({ error: tagErr })
+    }
+
+    if (req.body.compilerFlags !== undefined) {
+      const flagErr = validateCompilerFlags(req.body.compilerFlags)
+      if (flagErr) return res.status(400).json({ error: flagErr })
     }
 
     const id = makeSlug(title.trim())
@@ -105,13 +176,15 @@ export default function snippetRoutes(DATA_DIR) {
         notes: notes || '',
         language,
         files: validFiles.map(f => f.name),
+        pinned: req.body.pinned === true,
+        compilerFlags: req.body.compilerFlags ?? [],
         createdAt: now,
         updatedAt: now,
       }
       await fs.writeFile(path.join(dir(id), 'meta.json'), JSON.stringify(meta, null, 2))
       res.status(201).json(meta)
     } catch (e) {
-      console.error('[routes] POST /snippets failed', e)  // P21
+      log.error('[routes] POST /snippets failed', e)
       fs.rm(dir(id), { recursive: true, force: true }).catch(() => {})  // P4: rollback
       res.status(500).json({ error: 'Failed to create snippet' })
     }
@@ -126,11 +199,18 @@ export default function snippetRoutes(DATA_DIR) {
     if (title !== undefined && (!title || typeof title !== 'string' || !title.trim())) {
       return res.status(400).json({ error: 'Title required' })
     }
+    if (title !== undefined && title.trim().length > 100) return res.status(400).json({ error: 'Title too long (max 100)' })
+    if (notes !== undefined && notes.length > 5000) return res.status(400).json({ error: 'Notes too long (max 5000)' })
 
     // P15: tags validation — only when tags are explicitly being updated
     if (tags !== undefined) {
       const tagErr = validateTags(tags)
       if (tagErr) return res.status(400).json({ error: tagErr })
+    }
+
+    if (req.body.compilerFlags !== undefined) {
+      const flagErr = validateCompilerFlags(req.body.compilerFlags)
+      if (flagErr) return res.status(400).json({ error: flagErr })
     }
 
     try {
@@ -153,12 +233,30 @@ export default function snippetRoutes(DATA_DIR) {
         notes: notes ?? meta.notes,
         language,
         files: validFiles ? validFiles.map(f => f.name) : meta.files,
+        pinned: req.body.pinned !== undefined ? req.body.pinned === true : (meta.pinned ?? false),
+        compilerFlags: req.body.compilerFlags !== undefined ? req.body.compilerFlags : (meta.compilerFlags ?? []),
         updatedAt: new Date().toISOString(),
       }
       await fs.writeFile(path.join(dir(id), 'meta.json'), JSON.stringify(updated, null, 2))
       res.json(updated)
     } catch (e) {
-      console.error('[routes] PUT /snippets/:id failed', { id }, e)  // P21
+      log.error('[routes] PUT /snippets/:id failed', { id }, e)
+      res.status(404).json({ error: 'Not found' })
+    }
+  })
+
+  router.patch('/snippets/:id/pin', async (req, res) => {
+    const { id } = req.params
+    if (!validId(id)) return res.status(400).json({ error: 'Invalid id' })
+    try {
+      const metaPath = path.join(dir(id), 'meta.json')
+      const meta = JSON.parse(await fs.readFile(metaPath, 'utf-8'))
+      meta.pinned = !meta.pinned
+      meta.updatedAt = new Date().toISOString()
+      await fs.writeFile(metaPath, JSON.stringify(meta, null, 2))
+      res.json({ pinned: meta.pinned })
+    } catch (e) {
+      log.error('[routes] PATCH /snippets/:id/pin failed', { id }, e)
       res.status(404).json({ error: 'Not found' })
     }
   })
@@ -171,7 +269,7 @@ export default function snippetRoutes(DATA_DIR) {
       await fs.rm(dir(id), { recursive: true, force: true })
       res.json({ ok: true })
     } catch (e) {
-      console.error('[routes] DELETE /snippets/:id failed', { id }, e)  // P21
+      log.error('[routes] DELETE /snippets/:id failed', { id }, e)
       res.status(404).json({ error: 'Not found' })
     }
   })
@@ -183,16 +281,17 @@ export default function snippetRoutes(DATA_DIR) {
     const snippetDir = dir(id)
     const outBin = `/tmp/cppvault-${id}`
 
-    let srcFiles, lang
+    let meta, srcFiles, lang, metaPath
     try {
-      const meta = JSON.parse(await fs.readFile(path.join(snippetDir, 'meta.json'), 'utf-8'))
+      metaPath = path.join(snippetDir, 'meta.json')
+      meta = JSON.parse(await fs.readFile(metaPath, 'utf-8'))
       lang = getLanguage(meta.language ?? DEFAULT_LANGUAGE)
       // P2: re-validate every filename loaded from meta.json — defense against tampered storage
       srcFiles = meta.files
         .filter(f => validFilename(f) && f.endsWith(lang.ext))
         .map(f => path.join(snippetDir, f))
     } catch (e) {
-      console.error('[routes] POST /snippets/:id/run load failed', { id }, e)  // P21
+      log.error('[routes] POST /snippets/:id/run load failed', { id }, e)
       return res.status(404).json({ error: 'Snippet not found' })
     }
 
@@ -201,7 +300,8 @@ export default function snippetRoutes(DATA_DIR) {
     // P2: compile via spawn with argv array — no shell
     // P13: sanitize snippetDir prefix from compiler error output
     if (lang.compile) {
-      const { err, stderr } = await compileCode(lang.compile(srcFiles, outBin))
+      const compilerFlags = (meta.compilerFlags ?? []).filter(f => ALLOWED_FLAGS.has(f))
+      const { err, stderr } = await compileCode(lang.compile(srcFiles, outBin, compilerFlags))
       if (err) {
         const cleaned = stderr.replaceAll(snippetDir + '/', '')
         return res.json({ stdout: '', stderr: cleaned, exitCode: 1 })
@@ -210,19 +310,31 @@ export default function snippetRoutes(DATA_DIR) {
 
     // executor handles P3 (done guard), P5 (error handler), P10 (process group kill),
     // P14 (stdin cap), P17 (cleanup on timeout)
+    let result
     try {
-      const result = await runCode({
+      result = await runCode({
         lang,
         srcFiles,
         outBin,
         stdin,
         cleanup: () => fs.unlink(outBin).catch(() => {}),
       })
-      res.json(result)
     } catch (e) {
-      console.error('[routes] POST /snippets/:id/run exec failed', { id }, e)  // P21
-      res.status(500).json({ error: 'Execution failed' })
+      log.error('[routes] POST /snippets/:id/run exec failed', { id }, e)
+      return res.status(500).json({ error: 'Execution failed' })
     }
+
+    // store run in meta; keep last 5; fire-and-forget
+    const entry = {
+      stdout: result.stdout.slice(0, MAX_RUN_OUTPUT),
+      stderr: result.stderr.slice(0, MAX_RUN_OUTPUT),
+      exitCode: result.exitCode,
+      timestamp: new Date().toISOString(),
+    }
+    const runs = [entry, ...(meta.runs ?? [])].slice(0, 5)
+    fs.writeFile(metaPath, JSON.stringify({ ...meta, runs }, null, 2)).catch(() => {})
+
+    res.json(result)
   })
 
   router.post('/playground/run', runLimiter, async (req, res) => {
@@ -237,7 +349,7 @@ export default function snippetRoutes(DATA_DIR) {
       await fs.mkdir(tmpDir, { recursive: true })
       await fs.writeFile(srcFile, lang.playgroundWrap(code))
     } catch (e) {
-      console.error('[routes] POST /playground/run setup failed', e)  // P21
+      log.error('[routes] POST /playground/run setup failed', e)
       return res.json({ stdout: '', stderr: e.message, exitCode: 1 })
     }
 
@@ -258,7 +370,7 @@ export default function snippetRoutes(DATA_DIR) {
       const result = await runCode({ lang, srcFiles: [srcFile], outBin, stdin, cleanup })
       res.json(result)
     } catch (e) {
-      console.error('[routes] POST /playground/run exec failed', e)  // P21
+      log.error('[routes] POST /playground/run exec failed', e)
       res.status(500).json({ error: 'Execution failed' })
     }
   })
