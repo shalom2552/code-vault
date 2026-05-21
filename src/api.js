@@ -7,19 +7,19 @@ const parseResponse = async (res) => {
 
 export const api = {
   listSnippets: () => fetch('/api/snippets').then(parseResponse),
-  getSnippet: (id) => fetch(`/api/snippets/${id}`).then(parseResponse),
+  getSnippet: (id) => fetch(`/api/snippets/${encodeURIComponent(id)}`).then(parseResponse),
   createSnippet: (body) => fetch('/api/snippets', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   }).then(parseResponse),
-  updateSnippet: (id, body) => fetch(`/api/snippets/${id}`, {
+  updateSnippet: (id, body) => fetch(`/api/snippets/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   }).then(parseResponse),
-  deleteSnippet: (id) => fetch(`/api/snippets/${id}`, { method: 'DELETE' }).then(parseResponse),
-  runSnippet: (id, stdin) => fetch(`/api/snippets/${id}/run`, {
+  deleteSnippet: (id) => fetch(`/api/snippets/${encodeURIComponent(id)}`, { method: 'DELETE' }).then(parseResponse),
+  runSnippet: (id, stdin) => fetch(`/api/snippets/${encodeURIComponent(id)}/run`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ stdin }),

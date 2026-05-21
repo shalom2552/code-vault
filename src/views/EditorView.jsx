@@ -3,7 +3,8 @@ import CodeEditor from '../components/CodeEditor.jsx'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
 
-const emptyFile = (language) => ({ _key: crypto.randomUUID(), name: getLanguage(language).defaultFile, content: '' })
+const makeKey = () => Math.random().toString(36).slice(2, 11)
+const emptyFile = (language) => ({ _key: makeKey(), name: getLanguage(language).defaultFile, content: '' })
 
 export default function EditorView({ snippetId, initialData, onSave, onBack }) {
   const isEdit = Boolean(snippetId)
@@ -59,7 +60,7 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
     }))
   }
 
-  const addFile = () => setForm(f => ({ ...f, files: [...f.files, { _key: crypto.randomUUID(), name: '', content: '' }] }))
+  const addFile = () => setForm(f => ({ ...f, files: [...f.files, { _key: makeKey(), name: '', content: '' }] }))
   const removeFile = (key) => setForm(f => ({ ...f, files: f.files.filter(file => file._key !== key) }))
 
   const handleSave = async () => {
