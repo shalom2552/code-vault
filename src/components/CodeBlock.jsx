@@ -22,7 +22,7 @@ const extensionsMap = {
   text: [],
 }
 
-function CodeBlock({ code, filename, language = 'cpp', fontSize = 14 }) {
+function CodeBlock({ code, filename, language = 'cpp', fontSize = 14, onCycleFont }) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -41,9 +41,16 @@ function CodeBlock({ code, filename, language = 'cpp', fontSize = 14 }) {
     <div className="code-block-wrapper">
       <div className="code-block-header">
         {filename && <div className="code-filename">{filename}</div>}
-        <button className="copy-btn" onClick={handleCopy}>
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
+        <div className="code-block-actions">
+          {onCycleFont && (
+            <button className="font-aa-btn" onClick={onCycleFont} title={`Font: ${fontSize}px — click to cycle`}>
+              Aa
+            </button>
+          )}
+          <button className="copy-btn" onClick={handleCopy}>
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
       </div>
       <CodeMirror
         value={code}

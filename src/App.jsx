@@ -98,7 +98,6 @@ export default function App() {
     <ToastProvider>
       <div className={`app font-size-${fontSize}`}>
 
-        {/* Left pane — ListView, persistent on desktop, active-only on mobile */}
         <div className={`list-pane${showingList ? '' : ' list-pane-mobile-hidden'}`}>
           <div className="desktop-bar">
             <div className="desktop-tabs">
@@ -117,18 +116,14 @@ export default function App() {
                 Playground
               </button>
             </div>
-            <button className="font-toggle-btn" onClick={cycleFont} title={`Font size: ${fontSize}px — click to cycle`}>
-              Aa<span className="font-size-label">{fontSize}</span>
-            </button>
           </div>
           <ListView onSelect={goDetail} onCreate={goCreate} onEdit={goEditFromList} />
         </div>
 
-        {/* Right / main pane */}
         <div className={`main-pane${showingList ? ' main-pane-mobile-hidden' : ''}`}>
           <Suspense fallback={<div className="view-loader">Loading…</div>}>
             {isSnippets && view === VIEWS.DETAIL && (
-              <DetailView id={selectedId} onBack={goList} onEdit={goEdit} onDeleted={goList} fontSize={fontSize} />
+              <DetailView id={selectedId} onBack={goList} onEdit={goEdit} onDeleted={goList} fontSize={fontSize} cycleFont={cycleFont} />
             )}
             {isSnippets && view === VIEWS.CREATE && (
               <EditorView
@@ -144,7 +139,7 @@ export default function App() {
             {isSnippets && view === VIEWS.EDIT_FROM_LIST && (
               <EditorView snippetId={selectedId} onSave={goDetail} onBack={goList} fontSize={fontSize} />
             )}
-            {isPlayground && <Playground onSaveAsSnippet={goCreateFromPlayground} fontSize={fontSize} />}
+            {isPlayground && <Playground onSaveAsSnippet={goCreateFromPlayground} fontSize={fontSize} cycleFont={cycleFont} />}
             {isSnippets && view === VIEWS.LIST && (
               <div className="detail-empty">
                 <EmptyState
@@ -156,7 +151,6 @@ export default function App() {
           </Suspense>
         </div>
 
-        {/* Mobile bottom nav — hidden on desktop via CSS */}
         {!inSnippetDetail && (
           <nav className="bottom-nav">
             <button
@@ -174,10 +168,6 @@ export default function App() {
             >
               <PlayIcon />
               <span className="nav-label">Playground</span>
-            </button>
-            <button className="nav-item" onClick={cycleFont} aria-label={`Font size ${fontSize}px`}>
-              <span className="font-toggle-label">Aa</span>
-              <span className="nav-label">{fontSize}px</span>
             </button>
           </nav>
         )}

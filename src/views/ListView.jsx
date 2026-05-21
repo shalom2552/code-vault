@@ -14,6 +14,7 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
   const [activeTag, setActiveTag] = useState(null)
   const [activeLanguage, setActiveLanguage] = useState(null)
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('list-sort') || 'Recent')
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [menuSnippet, setMenuSnippet] = useState(null)
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 })
   const pressTimer = useRef(null)
@@ -28,10 +29,10 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
     setError(null)
     api.listSnippets(q)
       .then(d => { setSnippets(d); setLoading(false) })
-      .catch(e => { 
+      .catch(e => {
         setError(`Failed to load snippets: ${e.message}`)
         toast(`Failed to load snippets: ${e.message}`, 'error')
-        setLoading(false) 
+        setLoading(false)
       })
   }, [toast])
 
@@ -73,7 +74,7 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
     const vw = window.innerWidth
     const vh = window.innerHeight
     const menuW = 160
-    const menuH = 96
+    const menuH = 144
     setMenuPos({
       x: Math.min(rect.left, vw - menuW - 8),
       y: Math.min(rect.bottom + 4, vh - menuH - 8),
@@ -89,7 +90,7 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
       const vw = window.innerWidth
       const vh = window.innerHeight
       const menuW = 160
-      const menuH = 96
+      const menuH = 144
       setMenuPos({
         x: Math.min(pressPos.current.x, vw - menuW - 8),
         y: Math.min(pressPos.current.y, vh - menuH - 8),
@@ -138,8 +139,7 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
     }
   }
 
-  const handlePin = async (e, s) => {
-    e.stopPropagation()
+  const handlePin = async (s) => {
     try {
       await api.pinSnippet(s.id)
       toast(s.pinned ? 'Snippet unpinned' : 'Snippet pinned', 'success')
@@ -159,20 +159,22 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
     return [...langs].sort()
   }, [snippets])
 
+  const activeFilterCount = (activeTag ? 1 : 0) + (activeLanguage ? 1 : 0)
+
   const sortedAndFiltered = useMemo(() => {
     let result = snippets
 
     if (activeTag) {
       result = result.filter(s => s.tags.includes(activeTag))
     }
-    
+
     if (activeLanguage) {
       result = result.filter(s => (s.language ?? DEFAULT_LANGUAGE) === activeLanguage)
     }
 
     result = [...result].sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-      
+
       switch (sortBy) {
         case 'Oldest': return new Date(a.createdAt) - new Date(b.createdAt)
         case 'A-Z': return a.title.localeCompare(b.title)
@@ -192,12 +194,6 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
           <h1 className="app-title">CodeVault</h1>
           <div className="list-top-actions">
             <span className="snippet-count">{snippets.length}</span>
-            <select className="form-select" value={sortBy} onChange={e => setSortBy(e.target.value)} title="Sort snippets">
-              <option value="Recent">Recent</option>
-              <option value="Oldest">Oldest</option>
-              <option value="A-Z">A-Z</option>
-              <option value="Z-A">Z-A</option>
-            </select>
             <button className="export-btn" onClick={handleExport} title="Export all snippets">↓</button>
           </div>
         </div>
@@ -208,32 +204,59 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
           onChange={e => setSearch(e.target.value)}
         />
         {error && <div className="error-banner">{error}</div>}
-        
-        {allLanguages.length > 0 && (
-          <div className="tags-bar">
-            {allLanguages.map(lang => (
-              <button
-                key={lang}
-                className={`tag-chip${activeLanguage === lang ? ' active' : ''}`}
-                onClick={() => setActiveLanguage(activeLanguage === lang ? null : lang)}
-              >
-                {LANGUAGES[lang]?.label ?? lang}
-              </button>
-            ))}
-          </div>
-        )}
 
-        {allTags.length > 0 && (
-          <div className="tags-bar">
-            {allTags.map(tag => (
-              <button
-                key={tag}
-                className={`tag-chip${activeTag === tag ? ' active' : ''}`}
-                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-              >
-                #{tag}
-              </button>
-            ))}
+        <button
+          className={`filter-toggle-btn${activeFilterCount > 0 ? ' has-active' : ''}`}
+          onClick={() => setFiltersOpen(o => !o)}
+          aria-expanded={filtersOpen}
+        >
+          <span>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
+          <span className="filter-toggle-arrow">{filtersOpen ? '▾' : '▸'}</span>
+        </button>
+
+        {filtersOpen && (
+          <div className="filter-panel">
+            <div className="filter-group">
+              <span className="filter-label">Sort</span>
+              <select className="form-select filter-sort-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                <option value="Recent">Recent</option>
+                <option value="Oldest">Oldest</option>
+                <option value="A-Z">A-Z</option>
+                <option value="Z-A">Z-A</option>
+              </select>
+            </div>
+            {allLanguages.length > 0 && (
+              <div className="filter-group">
+                <span className="filter-label">Language</span>
+                <div className="filter-chips">
+                  {allLanguages.map(lang => (
+                    <button
+                      key={lang}
+                      className={`lang-chip${activeLanguage === lang ? ' active' : ''}`}
+                      onClick={() => setActiveLanguage(activeLanguage === lang ? null : lang)}
+                    >
+                      {LANGUAGES[lang]?.label ?? lang}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {allTags.length > 0 && (
+              <div className="filter-group">
+                <span className="filter-label">Tags</span>
+                <div className="filter-chips">
+                  {allTags.map(tag => (
+                    <button
+                      key={tag}
+                      className={`tag-chip${activeTag === tag ? ' active' : ''}`}
+                      onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -263,14 +286,7 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
               >
                 <div className="card-top">
                   <div className="card-title">
-                    <button 
-                      className={`pin-btn ${s.pinned ? 'pinned' : ''}`} 
-                      onClick={(e) => handlePin(e, s)}
-                      title={s.pinned ? "Unpin" : "Pin"}
-                      aria-label={s.pinned ? "Unpin snippet" : "Pin snippet"}
-                    >
-                      {s.pinned ? '★' : '☆'}
-                    </button>
+                    {s.pinned && <span className="pin-indicator" title="Pinned">📌</span>}
                     {s.title}
                   </div>
                   <button className="card-menu-btn" onClick={(e) => openMenu(s, e)} aria-label="Options">⋮</button>
@@ -301,6 +317,9 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
         <div className="ctx-overlay" onClick={() => setMenuSnippet(null)}>
           <div className="ctx-menu" ref={menuRef} style={{ left: menuPos.x, top: menuPos.y }} onClick={e => e.stopPropagation()}>
             <button className="ctx-item" onClick={() => { setMenuSnippet(null); onEdit(menuSnippet.id) }}>Edit</button>
+            <button className="ctx-item" onClick={() => { handlePin(menuSnippet); setMenuSnippet(null) }}>
+              {menuSnippet.pinned ? 'Unpin' : '📌 Pin'}
+            </button>
             <button className="ctx-item ctx-item-danger" onClick={() => setConfirmTarget(menuSnippet)}>Delete</button>
           </div>
         </div>

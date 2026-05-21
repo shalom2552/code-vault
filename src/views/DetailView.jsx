@@ -1,11 +1,42 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import CodeBlock from '../components/CodeBlock.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
 import { useToast } from '../components/ToastContext.jsx'
 import { api } from '../api.js'
 
-export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 14 }) {
+function relativeTime(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const s = Math.round(diff / 1000)
+  if (s < 60) return 'just now'
+  const m = Math.round(s / 60)
+  if (m < 60) return `${m}m ago`
+  const h = Math.round(m / 60)
+  if (h < 24) return `${h}h ago`
+  const d = Math.round(h / 24)
+  if (d < 30) return `${d}d ago`
+  const mo = Math.round(d / 30)
+  if (mo < 12) return `${mo}mo ago`
+  return `${Math.round(mo / 12)}y ago`
+}
+
+function TimestampRow({ snippet }) {
+  const created = new Date(snippet.createdAt)
+  const updated = new Date(snippet.updatedAt)
+  const sameTime = Math.abs(created - updated) < 1000
+  if (sameTime) {
+    return <span title={created.toLocaleString()}>Created {relativeTime(snippet.createdAt)}</span>
+  }
+  return (
+    <>
+      <span title={created.toLocaleString()}>Created {relativeTime(snippet.createdAt)}</span>
+      {' · '}
+      <span title={updated.toLocaleString()}>Updated {relativeTime(snippet.updatedAt)}</span>
+    </>
+  )
+}
+
+export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 14, cycleFont }) {
   const [snippet, setSnippet] = useState(null)
   const [activeFile, setActiveFile] = useState(0)
   const [stdin, setStdin] = useState('')
@@ -14,6 +45,9 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState(null)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [overflowOpen, setOverflowOpen] = useState(false)
+  const [overflowPos, setOverflowPos] = useState({ x: 0, y: 0 })
+  const overflowBtnRef = useRef(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -27,6 +61,18 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
       .then(setSnippet)
       .catch(e => setError(e.message))
   }, [id])
+
+  const openOverflow = () => {
+    if (overflowBtnRef.current) {
+      const rect = overflowBtnRef.current.getBoundingClientRect()
+      const menuW = 180
+      setOverflowPos({
+        x: Math.max(8, Math.min(rect.right - menuW, window.innerWidth - menuW - 8)),
+        y: Math.min(rect.bottom + 4, window.innerHeight - 170),
+      })
+    }
+    setOverflowOpen(true)
+  }
 
   const handleDelete = async () => {
     try {
@@ -85,14 +131,6 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
     }
   }
 
-  const handleCopyCode = () => {
-    const file = snippet.files[activeFile]
-    if (file && file.content) {
-      navigator.clipboard.writeText(file.content)
-      toast('Code copied to clipboard', 'success')
-    }
-  }
-
   if (error && !snippet) return (
     <div className="detail-view">
       <div className="nav-header">
@@ -114,22 +152,25 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
 
   return (
     <div className="detail-view">
-      <div className="nav-header">
-        <button className="back-btn" onClick={onBack}>←</button>
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, margin: '0 1rem' }}>
-          <span className="nav-title">{snippet.title}</span>
-          <span className="nav-timestamps">
-            Created: {new Date(snippet.createdAt).toLocaleString()} · Updated: {new Date(snippet.updatedAt).toLocaleString()}
+      <div className="nav-header detail-nav">
+        <div className="detail-header-top">
+          <button className="back-btn" onClick={onBack}>←</button>
+          <span className="nav-title">
+            {snippet.pinned && <span className="pin-indicator" title="Pinned">📌</span>}
+            {snippet.title}
           </span>
+          <div className="nav-actions">
+            <button className="action-btn" onClick={onEdit}>Edit</button>
+            <button
+              ref={overflowBtnRef}
+              className="overflow-btn"
+              onClick={openOverflow}
+              aria-label="More actions"
+            >⋮</button>
+          </div>
         </div>
-        <div className="nav-actions">
-          <button className="action-btn" onClick={handleCopyCode}>Copy</button>
-          <button className="action-btn" onClick={handleDuplicate}>Duplicate</button>
-          <button className="action-btn" onClick={handlePin} title={snippet.pinned ? 'Unpin' : 'Pin'}>
-            {snippet.pinned ? '★' : '☆'}
-          </button>
-          <button className="action-btn" onClick={onEdit}>Edit</button>
-          <button className="action-btn danger" onClick={() => setConfirming(true)}>Del</button>
+        <div className="detail-timestamps">
+          <TimestampRow snippet={snippet} />
         </div>
       </div>
 
@@ -159,7 +200,13 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
           </div>
         )}
 
-        <CodeBlock code={file?.content || ''} filename={snippet.files.length === 1 ? file?.name : null} language={snippet.language ?? 'cpp'} fontSize={fontSize} />
+        <CodeBlock
+          code={file?.content || ''}
+          filename={snippet.files.length === 1 ? file?.name : null}
+          language={snippet.language ?? 'cpp'}
+          fontSize={fontSize}
+          onCycleFont={cycleFont}
+        />
 
         {runOutput && (
           <div className="run-output">
@@ -201,15 +248,28 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
           rows={1}
         />
         <button className="playground-run-btn" onClick={handleRun} disabled={running}>
-          {running ? '…' : '▶ Run'}
+          {running ? <><span className="spinner" /> Running…</> : '▶ Run'}
         </button>
       </div>
+
       {confirming && (
         <ConfirmDialog
           message={`Delete "${snippet.title}"?`}
           onConfirm={handleDelete}
           onCancel={() => setConfirming(false)}
         />
+      )}
+
+      {overflowOpen && (
+        <div className="ctx-overlay" onClick={() => setOverflowOpen(false)}>
+          <div className="ctx-menu" style={{ left: overflowPos.x, top: overflowPos.y }} onClick={e => e.stopPropagation()}>
+            <button className="ctx-item" onClick={() => { handleDuplicate(); setOverflowOpen(false) }}>Duplicate</button>
+            <button className="ctx-item" onClick={() => { handlePin(); setOverflowOpen(false) }}>
+              {snippet.pinned ? 'Unpin' : '📌 Pin'}
+            </button>
+            <button className="ctx-item ctx-item-danger" onClick={() => { setConfirming(true); setOverflowOpen(false) }}>Delete</button>
+          </div>
+        </div>
       )}
     </div>
   )

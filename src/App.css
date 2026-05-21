@@ -1133,3 +1133,167 @@
 .font-size-12 .cm-editor { font-size: 12px !important; }
 .font-size-14 .cm-editor { font-size: 14px !important; }
 .font-size-16 .cm-editor { font-size: 16px !important; }
+
+/* ── Spinner (running indicator) ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Collapsible filter bar ── */
+.filter-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-family: 'Outfit', sans-serif;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: color 0.12s, border-color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.filter-toggle-btn:hover { color: var(--text); border-color: var(--muted); }
+.filter-toggle-btn.has-active { color: var(--accent); border-color: var(--accent); }
+.filter-toggle-arrow { font-size: 10px; }
+
+.filter-panel {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 2px;
+}
+.filter-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.filter-label {
+  font-size: 11px;
+  color: var(--muted);
+  width: 60px;
+  min-width: 60px;
+  padding-top: 4px;
+  flex-shrink: 0;
+}
+.filter-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.filter-sort-select {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+/* ── Language chips (accent fill, distinct from tag chips) ── */
+.lang-chip {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  color: var(--accent);
+  font-size: 11px;
+  font-family: 'Outfit', sans-serif;
+  padding: 3px 10px;
+  border-radius: 99px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.1s, border-color 0.1s, background-color 0.1s;
+}
+.lang-chip:hover {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: var(--accent);
+}
+.lang-chip.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+/* ── Pin indicator (shown only on pinned cards) ── */
+.pin-indicator {
+  font-size: 11px;
+  margin-right: 4px;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+/* ── Detail view header (two-row layout) ── */
+.nav-header.detail-nav {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding-bottom: 10px;
+}
+.detail-header-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.detail-timestamps {
+  padding-left: 52px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* ── Overflow menu button (⋮) ── */
+.overflow-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 36px;
+  padding: 0;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s, border-color 0.12s;
+}
+.overflow-btn:hover { background: color-mix(in srgb, var(--text) 8%, transparent); border-color: var(--muted); }
+
+/* ── Font Aa button (code block toolbar + playground header) ── */
+.font-aa-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  padding: 4px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  transition: color 0.1s, border-color 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.font-aa-btn:hover { color: var(--text); border-color: var(--muted); }
+
+/* ── Code block actions group (Aa + Copy) ── */
+.code-block-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+}

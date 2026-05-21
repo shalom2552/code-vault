@@ -8,7 +8,7 @@ import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
 
 const storageKey = (lang) => `playground-code-${lang}`
 
-export default function Playground({ onSaveAsSnippet, fontSize = 14 }) {
+export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }) {
   const { toast } = useToast()
   const [language, setLanguage] = useState(() => localStorage.getItem('playground-language') || DEFAULT_LANGUAGE)
   const [code, setCode] = useState(() => {
@@ -85,6 +85,11 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14 }) {
           <span className="playground-hint-inline">{LANGUAGES[language]?.label ?? language} scratch pad</span>
         </div>
         <div className="playground-header-right">
+          {cycleFont && (
+            <button className="font-aa-btn" onClick={cycleFont} title={`Font: ${fontSize}px — click to cycle`}>
+              Aa
+            </button>
+          )}
           <select className="form-select playground-lang-select" value={language} onChange={handleLanguageChange}>
             {Object.entries(LANGUAGES).map(([id, lang]) => (
               <option key={id} value={id}>{lang.label}</option>
@@ -97,13 +102,13 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14 }) {
       <div className="playground-code">
         <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" fontSize={fontSize} />
       </div>
-      
+
       {running && (
         <div className="run-output playground-output">
           <LoadingSkeleton variant="detail" />
         </div>
       )}
-      
+
       {!running && output && (
         <div className="run-output playground-output">
           {output.stderr && <pre className="run-stderr">{output.stderr}</pre>}
@@ -120,7 +125,7 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14 }) {
           rows={1}
         />
         <button className="playground-run-btn" onClick={handleRun} disabled={running}>
-          {running ? '…' : '▶ Run'}
+          {running ? <><span className="spinner" /> Running…</> : '▶ Run'}
         </button>
         <button
           className="playground-save-btn"
