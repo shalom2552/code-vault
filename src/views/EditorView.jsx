@@ -89,6 +89,16 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
   const addFile = () => setForm(f => ({ ...f, files: [...f.files, { _key: makeKey(), name: '', content: '' }] }))
   const removeFile = (key) => setForm(f => ({ ...f, files: f.files.filter(file => file._key !== key) }))
 
+  const handlePaste = async (key) => {
+    try {
+      const text = await navigator.clipboard.readText()
+      updateFile(key, 'content', text)
+      toast('Pasted from clipboard', 'success')
+    } catch (e) {
+      toast(`Paste failed: ${e.message}`, 'error')
+    }
+  }
+
   const handleSave = async () => {
     if (!form.title.trim()) return setError('Title required')
     setSaving(true)
@@ -177,6 +187,13 @@ export default function EditorView({ snippetId, initialData, onSave, onBack }) {
                   value={f.name}
                   onChange={e => updateFile(f._key, 'name', e.target.value)}
                 />
+                <button 
+                  className="action-btn paste-btn" 
+                  onClick={() => handlePaste(f._key)}
+                  style={{ marginLeft: 'auto', marginRight: '0.5rem', fontSize: '0.8rem', padding: '0.2rem 0.5rem' }}
+                >
+                  Paste from clipboard
+                </button>
                 {form.files.length > 1 && (
                   <button className="remove-file-btn" onClick={() => removeFile(f._key)}>×</button>
                 )}

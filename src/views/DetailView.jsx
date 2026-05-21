@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import CodeBlock from '../components/CodeBlock.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
+import { useToast } from '../components/ToastContext.jsx'
 import { api } from '../api.js'
 
 export default function DetailView({ id, onBack, onEdit, onDeleted }) {
@@ -13,6 +14,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState(null)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     setSnippet(null)
@@ -28,9 +30,12 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
     try {
       setError(null)
       await api.deleteSnippet(id)
+      toast('Snippet deleted', 'success')
       onDeleted()
     } catch (e) {
-      setError(`Delete failed: ${e.message}`)
+      const msg = `Delete failed: ${e.message}`
+      setError(msg)
+      toast(msg, 'error')
     }
   }
 
@@ -53,8 +58,36 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
     try {
       const { pinned } = await api.pinSnippet(id)
       setSnippet(s => s ? { ...s, pinned } : s)
+      toast(pinned ? 'Snippet pinned' : 'Snippet unpinned', 'success')
     } catch (e) {
-      setError(`Pin failed: ${e.message}`)
+      const msg = `Pin failed: ${e.message}`
+      setError(msg)
+      toast(msg, 'error')
+    }
+  }
+
+  const handleDuplicate = async () => {
+    try {
+      const body = {
+        title: `${snippet.title} (copy)`,
+        tags: snippet.tags,
+        notes: snippet.notes,
+        language: snippet.language,
+        files: snippet.files.map(f => ({ name: f.name, content: f.content })),
+        compilerFlags: snippet.compilerFlags || []
+      }
+      await api.createSnippet(body)
+      toast('Snippet duplicated successfully', 'success')
+    } catch (e) {
+      toast(`Duplicate failed: ${e.message}`, 'error')
+    }
+  }
+
+  const handleCopyCode = () => {
+    const file = snippet.files[activeFile]
+    if (file && file.content) {
+      navigator.clipboard.writeText(file.content)
+      toast('Code copied to clipboard', 'success')
     }
   }
 
@@ -81,10 +114,17 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
     <div className="detail-view">
       <div className="nav-header">
         <button className="back-btn" onClick={onBack}>←</button>
-        <span className="nav-title">{snippet.title}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, margin: '0 1rem' }}>
+          <span className="nav-title">{snippet.title}</span>
+          <span className="nav-timestamps" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            Created: {new Date(snippet.createdAt).toLocaleString()} | Updated: {new Date(snippet.updatedAt).toLocaleString()}
+          </span>
+        </div>
         <div className="nav-actions">
+          <button className="action-btn" onClick={handleCopyCode}>Copy</button>
+          <button className="action-btn" onClick={handleDuplicate}>Duplicate</button>
           <button className="action-btn" onClick={handlePin} title={snippet.pinned ? 'Unpin' : 'Pin'}>
-            {snippet.pinned ? '📌' : '📍'}
+            {snippet.pinned ? '★' : '☆'}
           </button>
           <button className="action-btn" onClick={onEdit}>Edit</button>
           <button className="action-btn danger" onClick={() => setConfirming(true)}>Del</button>
@@ -134,7 +174,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted }) {
             </button>
             {historyOpen && (
               <div className="run-history-list">
-                {[...runs].reverse().map((r, i) => (
+                {[...runs].slice(-5).reverse().map((r, i) => (
                   <div key={i} className="run-history-entry">
                     <div className="run-history-meta">
                       <span className="run-history-time">{new Date(r.timestamp).toLocaleString()}</span>
