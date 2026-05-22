@@ -2,7 +2,8 @@
 .claude/
 
 # Snippet data (persisted on host, not in git)
-data/
+data/*
+!data/.gitkeep
 
 # Logs
 logs
