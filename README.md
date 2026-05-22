@@ -4,7 +4,9 @@ Personal code snippet manager with in-browser execution. Runs in Docker, accessi
 
 <!-- screenshot here -->
 
-CodeVault stores C++, C, and Python snippets as plain files on disk. Each snippet can have multiple source files, tags, and notes. From the detail view or a scratch-pad playground, you can compile and run code directly in the browser and see stdout/stderr output. The app is a PWA, so it can be installed on Android and used offline for viewing.
+CodeVault stores code snippets as plain files on disk. Each snippet can have multiple source files, tags, and notes. From the detail view or a scratch-pad playground, you can compile and run code directly in the browser and see stdout/stderr output. The app is a PWA, so it can be installed on Android and used offline for viewing.
+
+**Supported languages:** C++, C, Python, Bash, JavaScript (Node.js), TypeScript (tsx), Go, Rust, Java (OpenJDK 17), Ruby, PHP 8.3
 
 ## Features
 
@@ -25,7 +27,7 @@ CodeVault stores C++, C, and Python snippets as plain files on disk. Each snippe
 - **Frontend:** React 19 + Vite 8, plain CSS, no routing or state library
 - **Backend:** Express 5 wrapping Vite in middleware mode — single process, single port (5174)
 - **Storage:** Flat files — `data/<id>/meta.json` + raw source files, no database
-- **Code execution:** gcc / g++ / python3 inside the Alpine container
+- **Code execution:** gcc / g++ / python3 / node / tsx / go / rustc / javac / ruby / php83 inside the Alpine container
 - **Deployment:** Docker Compose + Tailscale HTTPS
 
 ## Getting Started

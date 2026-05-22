@@ -2,8 +2,14 @@ import { memo, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { cpp } from '@codemirror/lang-cpp'
 import { python } from '@codemirror/lang-python'
+import { javascript } from '@codemirror/lang-javascript'
+import { go } from '@codemirror/lang-go'
+import { rust } from '@codemirror/lang-rust'
+import { java } from '@codemirror/lang-java'
+import { php } from '@codemirror/lang-php'
 import { StreamLanguage } from '@codemirror/language'
 import { shell } from '@codemirror/legacy-modes/mode/shell'
+import { ruby } from '@codemirror/legacy-modes/mode/ruby'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView } from '@codemirror/view'
 
@@ -19,6 +25,13 @@ const extensionsMap = {
   c: [cpp()],
   python: [python()],
   bash: [StreamLanguage.define(shell)],
+  javascript: [javascript()],
+  typescript: [javascript({ typescript: true })],
+  go: [go()],
+  rust: [rust()],
+  java: [java()],
+  ruby: [StreamLanguage.define(ruby)],
+  php: [php()],
   text: [],
 }
 

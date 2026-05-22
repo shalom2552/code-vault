@@ -54,7 +54,7 @@ describe('client language registry', () => {
   describe('getLanguage', () => {
     it('returns cpp entry for "cpp"', () => expect(getLanguage('cpp')).toBe(LANGUAGES.cpp))
     it('returns c entry for "c"', () => expect(getLanguage('c')).toBe(LANGUAGES.c))
-    it('falls back to default for unknown id', () => expect(getLanguage('rust')).toBe(LANGUAGES[DEFAULT_LANGUAGE]))
+    it('falls back to default for unknown id', () => expect(getLanguage('fortran')).toBe(LANGUAGES[DEFAULT_LANGUAGE]))
     it('falls back to default for undefined', () => expect(getLanguage(undefined)).toBe(LANGUAGES[DEFAULT_LANGUAGE]))
   })
 

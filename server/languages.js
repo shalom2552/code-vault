@@ -1,3 +1,5 @@
+import { dirname } from 'path'
+
 const CPP_HEADERS = `#include <iostream>
 #include <vector>
 #include <string>
@@ -49,6 +51,55 @@ export const LANGUAGES = {
     srcFile: 'main.sh',
     compile: null,
     runner: (_bin, srcFiles) => ['/bin/sh', srcFiles[0]],
+    playgroundWrap: (code) => code,
+  },
+  javascript: {
+    ext: '.js',
+    srcFile: 'main.js',
+    compile: null,
+    runner: (_bin, srcFiles) => ['node', srcFiles[0]],
+    playgroundWrap: (code) => code,
+  },
+  typescript: {
+    ext: '.ts',
+    srcFile: 'main.ts',
+    compile: null,
+    runner: (_bin, srcFiles) => ['tsx', srcFiles[0]],
+    playgroundWrap: (code) => code,
+  },
+  go: {
+    ext: '.go',
+    srcFile: 'main.go',
+    compile: (files, bin, flags = []) => ['go', 'build', ...flags, '-o', bin, ...files],
+    runner: (bin) => [bin],
+    playgroundWrap: (code) => code,
+  },
+  rust: {
+    ext: '.rs',
+    srcFile: 'main.rs',
+    compile: (files, bin, flags = []) => ['rustc', ...flags, files[0], '-o', bin],
+    runner: (bin) => [bin],
+    playgroundWrap: (code) => code,
+  },
+  java: {
+    ext: '.java',
+    srcFile: 'Main.java',
+    compile: (files, bin, flags = []) => ['javac', ...flags, ...files],
+    runner: (_bin, srcFiles) => ['java', '-cp', dirname(srcFiles[0]), 'Main'],
+    playgroundWrap: (code) => code,
+  },
+  ruby: {
+    ext: '.rb',
+    srcFile: 'main.rb',
+    compile: null,
+    runner: (_bin, srcFiles) => ['ruby', srcFiles[0]],
+    playgroundWrap: (code) => code,
+  },
+  php: {
+    ext: '.php',
+    srcFile: 'main.php',
+    compile: null,
+    runner: (_bin, srcFiles) => ['php83', srcFiles[0]],
     playgroundWrap: (code) => code,
   },
 }

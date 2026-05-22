@@ -35,12 +35,19 @@ function validateTags(tags) {
 }
 
 const ALLOWED_FLAGS = new Set([
+  // C / C++
   '-O0', '-O1', '-O2', '-O3',
   '-Wall', '-Wextra', '-Werror',
   '-std=c++17', '-std=c++20', '-std=c++23',
   '-std=c11', '-std=c99',
   '-lm', '-lpthread',
   '-g', '-DDEBUG',
+  // Go
+  '-race', '-v',
+  // Rust
+  '--edition 2021', '--edition 2024', '-O',
+  // Java
+  '-Xlint',
 ])
 
 function validateCompilerFlags(flags) {

@@ -1,6 +1,8 @@
 FROM node:24-alpine
-# Add compilers and tailscale
-RUN apk add --no-cache gcc g++ make python3 tailscale
+# Add compilers, runtimes, and tailscale
+RUN apk add --no-cache gcc g++ make python3 tailscale \
+    go rust ruby openjdk17-jdk php83
+RUN npm install -g tsx
 
 WORKDIR /app
 

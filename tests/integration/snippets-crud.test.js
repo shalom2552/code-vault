@@ -113,7 +113,7 @@ describe('snippets CRUD', () => {
     it('falls back to cpp for unknown language', async () => {
       const res = await request(app)
         .post('/api/snippets')
-        .send({ title: 'Bad lang', language: 'rust', files: [{ name: 'main.rs', content: '' }] })
+        .send({ title: 'Bad lang', language: 'fortran', files: [{ name: 'main.f', content: '' }] })
       expect(res.body.language).toBe('cpp')
     })
 
