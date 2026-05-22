@@ -24,7 +24,7 @@ CodeVault stores C++, C, and Python snippets as plain files on disk. Each snippe
 
 - **Frontend:** React 19 + Vite 8, plain CSS, no routing or state library
 - **Backend:** Express 5 wrapping Vite in middleware mode — single process, single port (5174)
-- **Storage:** Flat files — `data/<uuid>/meta.json` + raw source files, no database
+- **Storage:** Flat files — `data/<id>/meta.json` + raw source files, no database
 - **Code execution:** gcc / g++ / python3 inside the Alpine container
 - **Deployment:** Docker Compose + Tailscale HTTPS
 
@@ -101,7 +101,7 @@ Open the app, tap **+** to create a snippet, give it a title, paste or write som
 ├── tests/
 │   ├── integration/    # Supertest — snippets CRUD, run, playground
 │   └── unit/           # Language registry, client language definitions
-├── data/               # Bind-mounted volume — one UUID dir per snippet
+├── data/               # Bind-mounted volume — one directory per snippet
 ├── Dockerfile          # Node 24 Alpine + gcc + g++ + python3 + tailscale
 ├── docker-compose.yml  # Dev config — bind-mounts repo, exposes 5174
 └── entrypoint.sh       # Tailscale startup, node_modules check, server launch
