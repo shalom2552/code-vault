@@ -802,7 +802,7 @@
 /* ── Toast System ── */
 .toast-container {
   position: fixed;
-  bottom: 24px;
+  bottom: calc(60px + env(safe-area-inset-bottom) + 8px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -1041,6 +1041,8 @@
     right: 16px;
     bottom: 16px;
   }
+  /* No bottom nav on desktop — reset toast offset */
+  .toast-container { bottom: 24px; }
 }
 
 /* ── Detail empty state (desktop right pane when nothing selected) ── */

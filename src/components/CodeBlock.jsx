@@ -9,7 +9,7 @@ import { EditorView } from '@codemirror/view'
 
 const readOnlyTheme = EditorView.theme({
   '&': { height: 'auto' },
-  '.cm-scroller': { overflow: 'visible' },
+  '.cm-scroller': { overflow: 'auto' },
   '.cm-content': { padding: '16px 0' },
   '.cm-line': { padding: '0 16px' },
 })

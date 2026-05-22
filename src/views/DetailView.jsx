@@ -266,7 +266,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
           <div className="ctx-menu" style={{ left: overflowPos.x, top: overflowPos.y }} onClick={e => e.stopPropagation()}>
             <button className="ctx-item" onClick={() => { handleDuplicate(); setOverflowOpen(false) }}>Duplicate</button>
             <button className="ctx-item" onClick={() => { handlePin(); setOverflowOpen(false) }}>
-              {snippet.pinned ? 'Unpin' : '📌 Pin'}
+              {snippet.pinned ? 'Unpin' : 'Pin'}
             </button>
             <button className="ctx-item ctx-item-danger" onClick={() => { setConfirming(true); setOverflowOpen(false) }}>Delete</button>
           </div>

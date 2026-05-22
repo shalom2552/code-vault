@@ -9,7 +9,7 @@ import { EditorView } from '@codemirror/view'
 
 const autoHeightTheme = EditorView.theme({
   '&': { height: 'auto' },
-  '.cm-scroller': { overflow: 'visible', minHeight: '100px' },
+  '.cm-scroller': { overflowX: 'auto', overflowY: 'visible', minHeight: '100px' },
   '.cm-content': { minHeight: '100px' },
 })
 

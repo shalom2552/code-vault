@@ -139,6 +139,25 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
     }
   }
 
+  const handleDuplicate = async (s) => {
+    try {
+      const full = await api.getSnippet(s.id)
+      const body = {
+        title: `${full.title} (copy)`,
+        tags: full.tags,
+        notes: full.notes,
+        language: full.language,
+        files: full.files.map(f => ({ name: f.name, content: f.content })),
+        compilerFlags: full.compilerFlags || [],
+      }
+      await api.createSnippet(body)
+      toast(`Duplicated "${full.title}"`, 'success')
+      load(search)
+    } catch (e) {
+      toast(`Duplicate failed: ${e.message}`, 'error')
+    }
+  }
+
   const handlePin = async (s) => {
     try {
       await api.pinSnippet(s.id)
@@ -317,8 +336,9 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
         <div className="ctx-overlay" onClick={() => setMenuSnippet(null)}>
           <div className="ctx-menu" ref={menuRef} style={{ left: menuPos.x, top: menuPos.y }} onClick={e => e.stopPropagation()}>
             <button className="ctx-item" onClick={() => { setMenuSnippet(null); onEdit(menuSnippet.id) }}>Edit</button>
+            <button className="ctx-item" onClick={() => { handleDuplicate(menuSnippet); setMenuSnippet(null) }}>Duplicate</button>
             <button className="ctx-item" onClick={() => { handlePin(menuSnippet); setMenuSnippet(null) }}>
-              {menuSnippet.pinned ? 'Unpin' : '📌 Pin'}
+              {menuSnippet.pinned ? 'Unpin' : 'Pin'}
             </button>
             <button className="ctx-item ctx-item-danger" onClick={() => setConfirmTarget(menuSnippet)}>Delete</button>
           </div>

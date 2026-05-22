@@ -57,7 +57,7 @@ export default function App() {
     localStorage.setItem('code-font-size', String(next))
   }
 
-  const goDetail = (id) => { setSelectedId(id); setView(VIEWS.DETAIL); setPlaygroundSeed(null) }
+  const goDetail = (id) => { setSelectedId(id); setTab(TABS.SNIPPETS); setView(VIEWS.DETAIL); setPlaygroundSeed(null) }
   const goList = () => { setView(VIEWS.LIST); setPlaygroundSeed(null) }
   const goCreate = () => { setSelectedId(null); setView(VIEWS.CREATE) }
   const goEdit = () => setView(VIEWS.EDIT)

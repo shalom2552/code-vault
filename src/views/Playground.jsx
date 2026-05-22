@@ -63,9 +63,7 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }
     try {
       const out = await api.runPlayground(code, stdin, language)
       setOutput(out)
-      if (out.exitCode === 0) {
-        toast('Run completed successfully', 'success')
-      } else {
+      if (out.exitCode !== 0) {
         toast(`Run failed with exit code ${out.exitCode}`, 'error')
       }
     } catch (e) {
