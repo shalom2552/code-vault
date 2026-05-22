@@ -1,8 +1,15 @@
 const parseResponse = async (res) => {
+  const text = await res.text();
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
+    let msg;
+    try { msg = JSON.parse(text).error; } catch {}
+    throw new Error(msg || `HTTP ${res.status}`);
   }
-  return res.json();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error('Server returned unexpected response');
+  }
 }
 
 export const api = {

@@ -94,7 +94,8 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
     try {
       const out = await api.runSnippet(id, stdin)
       setRunOutput(out)
-      setSnippet(s => s ? { ...s, runs: out.runs ?? s.runs } : s)
+      const newRun = { stdout: out.stdout, stderr: out.stderr, exitCode: out.exitCode, timestamp: new Date().toISOString() }
+      setSnippet(s => s ? { ...s, runs: [newRun, ...(s.runs ?? [])].slice(0, 5) } : s)
     } catch (e) {
       setError(`Run failed: ${e.message}`)
     } finally {

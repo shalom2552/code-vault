@@ -102,12 +102,6 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }
         <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" fontSize={fontSize} />
       </div>
 
-      {running && (
-        <div className="run-output playground-output">
-          <LoadingSkeleton variant="detail" />
-        </div>
-      )}
-
       {!running && output && (
         <div className="run-output playground-output">
           {output.stderr && <pre className="run-stderr">{output.stderr}</pre>}
