@@ -6,7 +6,7 @@ Personal code snippet manager with in-browser execution. Runs in Docker, accessi
 
 | List view | Detail + Run | Playground |
 |---|---|---|
-| ![List](docs/screenshots/list.png) | ![Detail](docs/screenshots/detail.png) | ![Playground](docs/screenshots/playground.png) |
+| <img src="docs/screenshots/list.png" width="260"> | <img src="docs/screenshots/detail.png" width="260"> | <img src="docs/screenshots/playground.png" width="260"> |
 
 CodeVault stores code snippets as plain files on disk. Each snippet can have multiple source files, tags, and notes. From the detail view or a scratch-pad playground, you can compile and run code directly in the browser and see stdout/stderr output. The app is a PWA, so it can be installed on Android and used offline for viewing.
 
