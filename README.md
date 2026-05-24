@@ -40,7 +40,7 @@ CodeVault stores code snippets as plain files on disk. Each snippet can have mul
 
 ```bash
 git clone https://github.com/shalom2552/code-vault.git
-cd codevault
+cd code-vault
 docker compose up --build
 ```
 
