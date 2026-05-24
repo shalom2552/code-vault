@@ -275,6 +275,7 @@
 .detail-scroll {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-bottom: 8px;
 }
 .run-footer {
@@ -515,6 +516,9 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
 }
 .save-btn {
   background: var(--accent);
@@ -712,7 +716,7 @@
 .ctx-item-danger { color: var(--danger); }
 
 /* ── Bottom nav ── */
-.tab-content { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.tab-content { flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .bottom-nav {
   display: flex;
   height: calc(60px + env(safe-area-inset-bottom));
@@ -898,6 +902,7 @@
 .cm-editor {
   font-size: 13px;
   background: var(--code-bg) !important;
+  max-width: 100%;
 }
 .cm-editor .cm-gutters {
   background: var(--code-bg) !important;
@@ -1137,6 +1142,8 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
 }
 .main-pane-mobile-hidden { display: none; }
 
