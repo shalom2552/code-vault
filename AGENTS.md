@@ -7,43 +7,40 @@ npm test && npm run lint
 docker compose up --build
 ```
 
-## Architecture Decisions
+## Architecture
 
-- Execution: `spawn()` via `executor.js`, never `exec()`. Routes call `compileCode()`/`runCode()`. Detached; kill group on timeout. Shell: `ulimit -v 131072` + `ulimit -t 10`.
-- Auth: bearer token on `/api/*` when `AUTH_TOKEN` set. `/api/health` open.
-- Storage: filesystem at `DATA_DIR`. Dirs: `slugified_title_<8-hex>`. Write source before `meta.json`; delete partial dir on failure.
-- Routing: no library. `App.jsx` state machine; nav via prop callbacks.
-- State: props down from `App.jsx`. `ToastContext` for toasts. `localStorage` only for `code-font-size`.
+- Execution: `spawn()` via `server/executor.js`. Detached process group; SIGKILL on timeout kills grandchildren. Shell: `ulimit -v 131072` (128 MB) + `ulimit -t 29` (CPU sec). Output capped 1 MB; kills process on cap.
+- Storage: `DATA_DIR` filesystem. Dirs: `slugified_title_<8-hex>`. Write source files before `meta.json`; rollback (rm dir) on failure.
+- Auth: `/api/health` pre-auth in `server/index.js`. All other `/api/*` auto-guarded when `AUTH_TOKEN` set.
+- State: props down from `App.jsx`. `ToastContext` only exception. `localStorage` only for `code-font-size`.
 - Styles: `App.css` only. No modules, no inline, no UI libs.
-- Code display: CodeMirror for editing and read-only. `highlight.js` installed but unused.
-- Run output: `OutputPanel` only. Never inline.
-- Language defs: `server/languages.js` + `src/languages.js` — edit as a pair.
 
-## Conventions
+## Language Files (always edit as a pair)
 
-- `PascalCase.jsx` components, `camelCase.js` utils. `memo()` on leaves.
-- Errors: `toast(msg,'error')` for users; `log.error()` on server.
-- All API calls via `src/api.js`.
-- Conventional commits. Pre-commit: lint-staged `eslint --max-warnings 0`.
+`server/languages.js` — compile argv + runner argv.  
+`src/languages.js` — client labels, editor defaults, `playgroundDefault`.
+
+Gotchas:
+- Java: `srcFile = 'Main.java'` (capital M); runner: `java -cp <dir> Main`
+- PHP: runner binary is `php83`, not `php`
+- TypeScript: runner is `tsx`, not `ts-node`
+- `hljsLang` in client file exists but `highlight.js` is never called — don't add hljs rendering
+
+## Testing
+
+Real Express + real tmp fs, no mocks. Rate limiters skip when `VITEST=true`.  
+**Timeout constraint**: executor `TIMEOUT_MS = 30000`. Test `EXECUTOR_TIMEOUT` must be > 30000; global `testTimeout` must be > `EXECUTOR_TIMEOUT`. (currently 35000 / 40000)
 
 ## File Ownership (one agent at a time)
 
 `package.json` · `src/App.jsx` · `src/App.css` · `server/languages.js`+`src/languages.js`
 
-## Testing
-
-Vitest + supertest. `tests/integration/*.test.js` · `tests/unit/*.test.js`. Real Express + real tmp fs, no mocks. 40 s timeout. Rate limiters skip when `VITEST=true`.
-
 ## Do Not
 
-- Never `exec()` — `spawn()` with argv array.
-- Never inline styles or UI libraries.
-- Never `highlight.js` — CodeMirror only.
-- Never Context for app state — props only.
-- Never raw `fetch()` — use `src/api.js`.
-- Never inline run output — use `OutputPanel`.
-- Never compiler flags outside `ALLOWED_FLAGS` in `server/routes.js`.
-
-## Updating This File
-
-Significant decision or pattern change — update before committing.
+- Never `exec()` — `spawn()` with argv array from `languages.js`
+- Never inline styles or UI libraries
+- Never `highlight.js` for rendering — CodeMirror only
+- Never React Context for app state — props only (`ToastContext` is the only exception)
+- Never raw `fetch()` — `src/api.js`
+- Never inline run output — `OutputPanel`
+- Never compiler flags outside `ALLOWED_FLAGS` in `server/routes.js`
