@@ -31,6 +31,11 @@ Gotchas:
 Real Express + real tmp fs, no mocks. Rate limiters skip when `VITEST=true`.  
 **Timeout constraint**: executor `TIMEOUT_MS = 30000`. Test `EXECUTOR_TIMEOUT` must be > 30000; global `testTimeout` must be > `EXECUTOR_TIMEOUT`. (currently 35000 / 40000)
 
+- Run `npm test` before committing any change
+- If a test fails, fix it — never skip or delete a passing test
+- If you change behavior that a test covers, update the test
+- Never use --forceExit to mask open handle issues
+
 ## File Ownership (one agent at a time)
 
 `package.json` · `src/App.jsx` · `src/App.css` · `server/languages.js`+`src/languages.js`
