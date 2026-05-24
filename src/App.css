@@ -1140,6 +1140,9 @@
 }
 .main-pane-mobile-hidden { display: none; }
 
+/* ── List pane toggle (editor/create mode) ── */
+.list-pane-toggle-btn { display: none; }
+
 @media (min-width: 900px) {
   .app {
     max-width: none;
@@ -1152,6 +1155,13 @@
     flex: none;
     border-right: 1px solid var(--border);
     position: relative;
+    transition: width 200ms ease, min-width 200ms ease, max-width 200ms ease;
+  }
+  .list-pane.list-pane-collapsed {
+    width: 0;
+    min-width: 0;
+    max-width: 0;
+    border-right: none;
   }
   /* Always show both panes on desktop */
   .list-pane-mobile-hidden { display: flex !important; }
@@ -1166,6 +1176,34 @@
   }
   /* No bottom nav on desktop — reset toast offset */
   .toast-container { bottom: 24px; }
+
+  /* Toggle button: fixed to left edge of main pane, tracks list-pane width */
+  .list-pane-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: var(--list-pane-width, 0px);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 48px;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: none;
+    color: var(--muted);
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 0 6px 6px 0;
+    z-index: 50;
+    transition: left 200ms ease, color 0.1s, background-color 0.1s;
+  }
+  .list-pane-toggle-btn:hover {
+    color: var(--text);
+    background: var(--border);
+    border-color: var(--muted);
+  }
 }
 
 /* ── Detail empty state (desktop right pane when nothing selected) ── */

@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import ListView from './views/ListView.jsx'
 import EmptyState from './components/EmptyState.jsx'
 import { ToastProvider } from './components/ToastContext.jsx'
@@ -78,6 +78,10 @@ export default function App() {
   const showingList = isSnippets && view === VIEWS.LIST
   const inSnippetDetail = isSnippets && view !== VIEWS.LIST
 
+  const [listPaneManualOverride, setListPaneManualOverride] = useState(false)
+  useEffect(() => { setListPaneManualOverride(false) }, [isInEditor])
+  const listPaneCollapsed = isInEditor && !listPaneManualOverride
+
   const handleBack = () => {
     if (view === VIEWS.EDIT) { setView(VIEWS.DETAIL); return }
     if (view === VIEWS.CREATE || view === VIEWS.EDIT_FROM_LIST) {
@@ -96,9 +100,12 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <div className={`app font-size-${fontSize}`}>
+      <div
+        className={`app font-size-${fontSize}`}
+        style={isInEditor ? { '--list-pane-width': listPaneCollapsed ? '0px' : '350px' } : {}}
+      >
 
-        <div className={`list-pane${showingList ? '' : ' list-pane-mobile-hidden'}`}>
+        <div className={`list-pane${showingList ? '' : ' list-pane-mobile-hidden'}${listPaneCollapsed ? ' list-pane-collapsed' : ''}`}>
           <div className="desktop-bar">
             <div className="desktop-tabs">
               <button
@@ -119,6 +126,17 @@ export default function App() {
           </div>
           <ListView onSelect={goDetail} onCreate={goCreate} onEdit={goEditFromList} />
         </div>
+
+        {isInEditor && (
+          <button
+            className="list-pane-toggle-btn"
+            onClick={() => setListPaneManualOverride(v => !v)}
+            title={listPaneManualOverride ? 'Hide snippet list' : 'Show snippet list'}
+            aria-label={listPaneManualOverride ? 'Hide snippet list' : 'Show snippet list'}
+          >
+            {listPaneManualOverride ? '◀' : '▶'}
+          </button>
+        )}
 
         <div className={`main-pane${showingList ? ' main-pane-mobile-hidden' : ''}`}>
           <Suspense fallback={<div className="view-loader">Loading…</div>}>
