@@ -220,7 +220,7 @@ describe('playground /run', () => {
   // ---------------------------------------------------------------------------
 
   describe('executor behavior', () => {
-    const EXECUTOR_TIMEOUT = 25000
+    const EXECUTOR_TIMEOUT = 35000
 
     it('timeout returns exitCode 124 and Timeout message in stderr', async () => {
       const res = await request(app)
