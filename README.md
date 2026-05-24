@@ -32,26 +32,107 @@ CodeVault stores code snippets as plain files on disk. Each snippet can have mul
 
 ## Getting Started
 
-### Prerequisites
-
-- Docker + Docker Compose
-- A Tailscale account (for remote access; local access works without it)
-
-### Run
+**Prerequisites:** Docker + Docker Compose
 
 ```bash
-git clone <repo>
+git clone https://github.com/shalom2552/CodeVault.git
 cd codevault
 docker compose up --build
 ```
 
-On first start the entrypoint will prompt you to authenticate Tailscale:
+Open **http://localhost:5174**. Done.
+
+To also get Tailscale HTTPS access (`https://codevault.<tailnet>.ts.net`), authenticate on first start:
 
 ```bash
 docker exec -it codevault tailscale login
 ```
 
-After login the app is available locally at `http://localhost:5174` and over Tailscale HTTPS at `https://codevault.<tailnet>.ts.net`.
+### Alternative Setups
+
+<details>
+<summary>Windows (Docker Desktop)</summary>
+
+Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/), then run the same commands above in PowerShell or WSL2.
+
+The `docker-compose.yml` mounts `/dev/net/tun` for Tailscale. If you skip Tailscale, remove these lines from `docker-compose.yml` before starting:
+
+```yaml
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+```
+
+App runs at `http://localhost:5174` as normal.
+
+</details>
+
+<details>
+<summary>Without Docker (bare Node.js)</summary>
+
+Requires Node 24+ and system runtimes for whichever languages you want to execute.
+
+Install runtimes:
+
+```bash
+# macOS
+brew install gcc python3 go rust ruby php && brew install openjdk@17
+
+# Ubuntu/Debian
+sudo apt install g++ gcc python3 golang rustc ruby php-cli openjdk-17-jdk
+
+# TypeScript (all platforms)
+npm install -g tsx
+```
+
+Run:
+
+```bash
+npm install
+npm run dev        # dev mode — Vite dev server, HMR
+# or
+npm run build && npm start   # production mode
+```
+
+Note: the server binary for PHP is `php83` (Alpine name). On other systems it is typically `php`. If PHP execution fails bare-metal, check that `php83` is on your PATH or symlink it.
+
+</details>
+
+<details>
+<summary>Without Tailscale (LAN / localhost only)</summary>
+
+Tailscale is optional. The app works on `http://localhost:5174` with no extra setup.
+
+For LAN access, the server already binds `0.0.0.0`. Find your machine's local IP and open `http://<local-ip>:5174` on other devices.
+
+If you want to skip the Tailscale daemon entirely, remove these lines from `docker-compose.yml`:
+
+```yaml
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+```
+
+</details>
+
+<details>
+<summary>Exposing to the internet</summary>
+
+Do not expose port 5174 directly. Put a reverse proxy (nginx, Caddy) in front with HTTPS, and set `AUTH_TOKEN` so unauthenticated requests are rejected.
+
+Example Caddy config:
+
+```
+codevault.example.com {
+    reverse_proxy localhost:5174
+}
+```
+
+Code execution runs as the container user with no filesystem sandboxing beyond the container itself — treat this as a single-user personal tool.
+
+</details>
 
 ### Environment Variables
 
