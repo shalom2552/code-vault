@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { cpp } from '@codemirror/lang-cpp'
 import { python } from '@codemirror/lang-python'
@@ -11,7 +11,8 @@ import { StreamLanguage } from '@codemirror/language'
 import { shell } from '@codemirror/legacy-modes/mode/shell'
 import { ruby } from '@codemirror/legacy-modes/mode/ruby'
 import { oneDark } from '@codemirror/theme-one-dark'
-import { EditorView } from '@codemirror/view'
+import { EditorView, keymap } from '@codemirror/view'
+import { Prec } from '@codemirror/state'
 
 const autoHeightTheme = EditorView.theme({
   '&': { height: 'auto' },
@@ -72,10 +73,19 @@ const SETUP = {
   tabSize: 2,
 }
 
-function CodeEditor({ value, onChange, minHeight = '260px', autoHeight = false, language = 'cpp', fontSize = 14 }) {
-  const extensions = autoHeight
+function CodeEditor({ value, onChange, minHeight = '260px', autoHeight = false, language = 'cpp', fontSize = 14, onCtrlEnter }) {
+  const baseExtensions = autoHeight
     ? (AUTO_HEIGHT_EXTENSIONS[language] ?? AUTO_HEIGHT_EXTENSIONS.text)
     : (BASE_EXTENSIONS[language] ?? BASE_EXTENSIONS.text)
+
+  const extensions = useMemo(() => {
+    if (!onCtrlEnter) return baseExtensions
+    const ctrlEnterKeymap = Prec.highest(keymap.of([{
+      key: 'Mod-Enter',
+      run: () => { onCtrlEnter(); return true },
+    }]))
+    return [...baseExtensions, ctrlEnterKeymap]
+  }, [baseExtensions, onCtrlEnter])
 
   return (
     <CodeMirror

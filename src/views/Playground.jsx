@@ -97,7 +97,7 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }
       </div>
       {error && <div className="error-banner">{error}</div>}
       <div className="playground-code">
-        <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" fontSize={fontSize} />
+        <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" fontSize={fontSize} onCtrlEnter={handleRun} />
       </div>
 
       {!running && output && (
