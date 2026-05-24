@@ -1,11 +1,13 @@
 ## Setup
 
 ```
-npm install && npm run dev   # dev port 5174
-npm run build && npm start   # prod
-npm test && npm run lint
-docker compose up --build
+docker compose up --build              # start container (bind-mounts repo)
+docker compose exec codevault npm test # run tests inside container
+npm run lint                           # lint runs fine on host
 ```
+
+> All test and execution commands must run **inside the container** (`docker compose exec codevault …`).  
+> Java, PHP (`php83`), and TypeScript (`tsx`) runtimes exist only in the image, not on the host.
 
 ## Architecture
 
@@ -31,7 +33,7 @@ Gotchas:
 Real Express + real tmp fs, no mocks. Rate limiters skip when `VITEST=true`.  
 **Timeout constraint**: executor `TIMEOUT_MS = 30000`. Test `EXECUTOR_TIMEOUT` must be > 30000; global `testTimeout` must be > `EXECUTOR_TIMEOUT`. (currently 35000 / 40000)
 
-- Run `npm test` before committing any change
+- Run `docker compose exec codevault npm test` before committing any change (host lacks java/php83/tsx)
 - If a test fails, fix it — never skip or delete a passing test
 - If you change behavior that a test covers, update the test
 - Never use --forceExit to mask open handle issues
