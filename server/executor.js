@@ -3,6 +3,7 @@ import { spawn } from 'child_process'
 const TIMEOUT_MS = 30_000
 const COMPILE_TIMEOUT_MS = 30_000
 const MAX_STDIN_BYTES = 64 * 1024
+const MAX_OUTPUT_BYTES = 1 * 1024 * 1024
 
 // P2: compile via spawn with argv array — no shell interpolation
 export async function compileCode(argv) {
@@ -10,7 +11,7 @@ export async function compileCode(argv) {
     const [cmd, ...args] = argv
     const child = spawn(cmd, args, { stdio: ['ignore', 'ignore', 'pipe'] })
     let stderr = ''
-    child.stderr.on('data', d => stderr += d)
+    child.stderr.on('data', d => { if (Buffer.byteLength(stderr, 'utf8') < MAX_OUTPUT_BYTES) stderr += d })
 
     const timer = setTimeout(() => {
       child.kill('SIGKILL')
@@ -40,13 +41,19 @@ export async function runCode({ lang, srcFiles, outBin, stdin, cleanup }) {
     // Shell wrapper sets memory limit then execs user binary — outBin path is controlled so no injection risk
     const child = spawn(
       'sh',
-      ['-c', 'ulimit -v 131072 2>/dev/null; exec "$@"', '--', cmd, ...args],
+      ['-c', 'ulimit -v 131072 2>/dev/null; ulimit -t 29 2>/dev/null; exec "$@"', '--', cmd, ...args],
       { detached: true }
     )
 
-    let stdout = '', runErr = ''
-    child.stdout.on('data', d => stdout += d)
-    child.stderr.on('data', d => runErr += d)
+    let stdout = '', runErr = '', outputCapped = false
+    child.stdout.on('data', d => {
+      if (Buffer.byteLength(stdout, 'utf8') < MAX_OUTPUT_BYTES) { stdout += d }
+      else if (!outputCapped) { stdout += '\n[output truncated]'; outputCapped = true; try { process.kill(-child.pid, 'SIGKILL') } catch {} }
+    })
+    child.stderr.on('data', d => {
+      if (Buffer.byteLength(runErr, 'utf8') < MAX_OUTPUT_BYTES) { runErr += d }
+      else if (!outputCapped) { runErr += '\n[output truncated]'; outputCapped = true; try { process.kill(-child.pid, 'SIGKILL') } catch {} }
+    })
     child.stdin.on('error', () => {})
 
     if (stdin) {
