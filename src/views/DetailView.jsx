@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import CodeBlock from '../components/CodeBlock.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
+import OutputPanel from '../components/OutputPanel.jsx'
 import { useToast } from '../components/ToastContext.jsx'
 import { api } from '../api.js'
 
@@ -42,6 +43,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
   const [stdin, setStdin] = useState('')
   const [running, setRunning] = useState(false)
   const [runOutput, setRunOutput] = useState(null)
+  const [elapsed, setElapsed] = useState(null)
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState(null)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -56,6 +58,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
     setError(null)
     setActiveFile(0)
     setRunOutput(null)
+    setElapsed(null)
     /* eslint-enable react-hooks/set-state-in-effect */
     api.getSnippet(id)
       .then(setSnippet)
@@ -91,8 +94,11 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
     setRunning(true)
     setError(null)
     setRunOutput(null)
+    setElapsed(null)
+    const start = Date.now()
     try {
       const out = await api.runSnippet(id, stdin)
+      setElapsed(Date.now() - start)
       setRunOutput(out)
       const newRun = { stdout: out.stdout, stderr: out.stderr, exitCode: out.exitCode, timestamp: new Date().toISOString() }
       setSnippet(s => s ? { ...s, runs: [newRun, ...(s.runs ?? [])].slice(0, 5) } : s)
@@ -209,14 +215,6 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
           onCycleFont={cycleFont}
         />
 
-        {runOutput && (
-          <div className="run-output">
-            {runOutput.stderr && <pre className="run-stderr">{runOutput.stderr}</pre>}
-            {runOutput.stdout && <pre className="run-stdout">{runOutput.stdout}</pre>}
-            <div className="exit-code">exit {runOutput.exitCode}</div>
-          </div>
-        )}
-
         {runs.length > 0 && (
           <div className="run-history">
             <button className="run-history-toggle" onClick={() => setHistoryOpen(o => !o)}>
@@ -240,6 +238,13 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
         )}
       </div>
 
+      <OutputPanel
+        output={runOutput}
+        elapsed={elapsed}
+        running={running}
+        onClear={() => { setRunOutput(null); setElapsed(null) }}
+      />
+
       <div className="run-footer">
         <textarea
           className="stdin-input playground-stdin"
@@ -249,7 +254,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
           rows={1}
         />
         <button className="playground-run-btn" onClick={handleRun} disabled={running}>
-          {running ? <><span className="spinner" /> Running…</> : '▶ Run'}
+          {running ? <span className="dancing-dots"><span /><span /><span /></span> : '▶ Run'}
         </button>
       </div>
 

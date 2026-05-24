@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import CodeEditor from '../components/CodeEditor.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import OutputPanel from '../components/OutputPanel.jsx'
 import { useToast } from '../components/ToastContext.jsx'
 import { api } from '../api.js'
 import { LANGUAGES, DEFAULT_LANGUAGE, getLanguage } from '../languages.js'
@@ -17,6 +18,7 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }
   const [stdin, setStdin] = useState('')
   const [running, setRunning] = useState(false)
   const [output, setOutput] = useState(null)
+  const [elapsed, setElapsed] = useState(null)
   const [error, setError] = useState(null)
   const [confirmingReset, setConfirmingReset] = useState(false)
 
@@ -39,6 +41,7 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }
     const saved = localStorage.getItem(storageKey(lang))
     setCode(saved || getLanguage(lang).playgroundDefault)
     setOutput(null)
+    setElapsed(null)
     setError(null)
   }
 
@@ -59,13 +62,13 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }
   const handleRun = async () => {
     setRunning(true)
     setOutput(null)
+    setElapsed(null)
     setError(null)
+    const start = Date.now()
     try {
       const out = await api.runPlayground(code, stdin, language)
+      setElapsed(Date.now() - start)
       setOutput(out)
-      if (out.exitCode !== 0) {
-        toast(`Run failed with exit code ${out.exitCode}`, 'error')
-      }
     } catch (e) {
       setError(`Run failed: ${e.message}`)
       toast(`Run failed: ${e.message}`, 'error')
@@ -100,13 +103,12 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }
         <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" fontSize={fontSize} onCtrlEnter={handleRun} />
       </div>
 
-      {!running && output && (
-        <div className="run-output playground-output">
-          {output.stderr && <pre className="run-stderr">{output.stderr}</pre>}
-          {output.stdout && <pre className="run-stdout">{output.stdout}</pre>}
-          <div className="exit-code">exit {output.exitCode}</div>
-        </div>
-      )}
+      <OutputPanel
+        output={output}
+        elapsed={elapsed}
+        running={running}
+        onClear={() => { setOutput(null); setElapsed(null) }}
+      />
       <div className="playground-footer">
         <textarea
           className="stdin-input playground-stdin"
