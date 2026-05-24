@@ -116,7 +116,7 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }
           rows={1}
         />
         <button className="playground-run-btn" onClick={handleRun} disabled={running}>
-          {running ? <><span className="spinner" /> Running…</> : '▶ Run'}
+          {running ? <span className="dancing-dots"><span /><span /><span /></span> : '▶ Run'}
         </button>
         <button
           className="playground-save-btn"
