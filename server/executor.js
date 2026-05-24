@@ -1,7 +1,7 @@
 import { spawn } from 'child_process'
 
-const TIMEOUT_MS = 10_000
-const COMPILE_TIMEOUT_MS = 15_000
+const TIMEOUT_MS = 30_000
+const COMPILE_TIMEOUT_MS = 30_000
 const MAX_STDIN_BYTES = 64 * 1024
 
 // P2: compile via spawn with argv array — no shell interpolation
@@ -14,7 +14,7 @@ export async function compileCode(argv) {
 
     const timer = setTimeout(() => {
       child.kill('SIGKILL')
-      resolve({ err: true, stderr: 'Compile timeout (15s)' })
+      resolve({ err: true, stderr: 'Compile timeout (30s)' })
     }, COMPILE_TIMEOUT_MS)
 
     child.on('error', (e) => {
@@ -69,7 +69,7 @@ export async function runCode({ lang, srcFiles, outBin, stdin, cleanup }) {
     // P17: cleanup (unlink binary / rm tmpDir) runs in timeout handler too
     const timer = setTimeout(() => {
       try { process.kill(-child.pid, 'SIGKILL') } catch {}
-      finish({ stdout, stderr: 'Timeout (10s)', exitCode: 124 })
+      finish({ stdout, stderr: 'Timeout (30s)', exitCode: 124 })
     }, TIMEOUT_MS)
 
     // P5: error handler for missing binary or exec failure
