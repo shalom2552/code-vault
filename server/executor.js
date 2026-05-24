@@ -85,9 +85,13 @@ export async function runCode({ lang, srcFiles, outBin, stdin, cleanup }) {
       finish({ stdout, stderr: e.message, exitCode: 1 })
     })
 
-    child.on('close', (code) => {
+    child.on('close', (code, signal) => {
       clearTimeout(timer)
-      finish({ stdout, stderr: runErr, exitCode: code })
+      if (signal) {
+        finish({ stdout, stderr: 'Timeout (30s)', exitCode: 124 })
+      } else {
+        finish({ stdout, stderr: runErr, exitCode: code })
+      }
     })
   })
 }
