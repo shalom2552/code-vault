@@ -35,7 +35,7 @@ CodeVault stores code snippets as plain files on disk. Each snippet can have mul
 **Prerequisites:** Docker + Docker Compose
 
 ```bash
-git clone https://github.com/shalom2552/CodeVault.git
+git clone https://github.com/shalom2552/code-vault.git
 cd codevault
 docker compose up --build
 ```
@@ -202,8 +202,8 @@ When you run a snippet or playground code, the server:
 
 | Limit | Value |
 |---|---|
-| Run timeout | 10 seconds |
-| Compile timeout | 15 seconds |
+| Run timeout | 30 seconds |
+| Compile timeout | 30 seconds |
 | Virtual memory | 128 MB (`ulimit -v`) |
 | Stdin | 64 KB max |
 | Rate limit | 10 requests/min per IP |
