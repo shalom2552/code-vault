@@ -57,9 +57,24 @@ docker exec -it codevault tailscale login
 <details>
 <summary>Windows (Docker Desktop)</summary>
 
-Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/), then run `docker compose up --build`. App runs at `http://localhost:5174`.
+Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/).
 
-To skip Tailscale entirely, uncomment `# - TAILSCALE=0` under `environment:` in `docker-compose.yml`.
+Before running `docker compose up --build`, open `docker-compose.yml` and make two edits:
+
+1. Comment out the `cap_add` and `devices` blocks
+2. Uncomment `- TAILSCALE=0`
+
+```yaml
+    # cap_add:
+    #   - NET_ADMIN
+    # devices:
+    #   - /dev/net/tun:/dev/net/tun
+    environment:
+      - NODE_ENV=development
+      - TAILSCALE=0
+```
+
+App runs at `http://localhost:5174`.
 
 </details>
 

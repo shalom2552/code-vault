@@ -5,11 +5,15 @@ services:
     container_name: codevault
     ports:
       - "5174:5174"
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
     volumes:
       - .:/app
     environment:
       - NODE_ENV=development
-      # - TAILSCALE=0  # disable Tailscale for localhost-only use
+      # - TAILSCALE=0  # disable Tailscale; also comment out cap_add/devices above (required on Windows)
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:5174/api/health"]
       interval: 30s
