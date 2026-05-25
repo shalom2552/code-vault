@@ -70,7 +70,7 @@ const SETUP = {
   autocompletion: false,
   indentOnInput: true,
   highlightActiveLine: true,
-  tabSize: 2,
+  tabSize: 4,
 }
 
 function CodeEditor({ value, onChange, minHeight = '260px', autoHeight = false, language = 'cpp', fontSize = 14, onCtrlEnter }) {
