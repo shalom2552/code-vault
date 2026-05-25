@@ -14,7 +14,7 @@ services:
       - tailscale_state:/var/lib/tailscale
     environment:
       - NODE_ENV=development
-      # - TAILSCALE=0  # disable Tailscale; also comment out cap_add/devices above (required on Windows)
+      # - TAILSCALE=0  # Windows: run .\windows-setup.ps1 instead of editing this manually
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:5174/api/health"]
       interval: 30s

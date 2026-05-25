@@ -57,21 +57,10 @@ docker exec -it codevault tailscale login
 <details>
 <summary>Windows (Docker Desktop)</summary>
 
-Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/).
+Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/), then run:
 
-Before running `docker compose up --build`, open `docker-compose.yml` and make two edits:
-
-1. Comment out the `cap_add` and `devices` blocks
-2. Uncomment `- TAILSCALE=0`
-
-```yaml
-    # cap_add:
-    #   - NET_ADMIN
-    # devices:
-    #   - /dev/net/tun:/dev/net/tun
-    environment:
-      - NODE_ENV=development
-      - TAILSCALE=0
+```powershell
+.\windows-setup.ps1
 ```
 
 App runs at `http://localhost:5174`.
