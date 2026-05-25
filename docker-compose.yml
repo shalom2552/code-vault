@@ -11,6 +11,7 @@ services:
       - /dev/net/tun:/dev/net/tun
     volumes:
       - .:/app
+      - tailscale_state:/var/lib/tailscale
     environment:
       - NODE_ENV=development
       # - TAILSCALE=0  # disable Tailscale; also comment out cap_add/devices above (required on Windows)
@@ -21,3 +22,6 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+
+volumes:
+  tailscale_state:
