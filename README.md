@@ -57,49 +57,9 @@ docker exec -it codevault tailscale login
 <details>
 <summary>Windows (Docker Desktop)</summary>
 
-Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/), then run the same commands above in PowerShell or WSL2.
+Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/), then run `docker compose up --build`. App runs at `http://localhost:5174`.
 
-The `docker-compose.yml` mounts `/dev/net/tun` for Tailscale. If you skip Tailscale, remove these lines from `docker-compose.yml` before starting:
-
-```yaml
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun:/dev/net/tun
-```
-
-App runs at `http://localhost:5174` as normal.
-
-</details>
-
-<details>
-<summary>Without Docker (bare Node.js)</summary>
-
-Requires Node 24+ and system runtimes for whichever languages you want to execute.
-
-Install runtimes:
-
-```bash
-# macOS
-brew install gcc python3 go rust ruby php && brew install openjdk@17
-
-# Ubuntu/Debian
-sudo apt install g++ gcc python3 golang rustc ruby php-cli openjdk-17-jdk
-
-# TypeScript (all platforms)
-npm install -g tsx
-```
-
-Run:
-
-```bash
-npm install
-npm run dev        # dev mode — Vite dev server, HMR
-# or
-npm run build && npm start   # production mode
-```
-
-Note: the server binary for PHP is `php83` (Alpine name). On other systems it is typically `php`. If PHP execution fails bare-metal, check that `php83` is on your PATH or symlink it.
+To skip Tailscale entirely, uncomment `# - TAILSCALE=0` under `environment:` in `docker-compose.yml`.
 
 </details>
 
@@ -146,6 +106,7 @@ Code execution runs as the container user with no filesystem sandboxing beyond t
 | `DATA_DIR` | Directory where snippet data is stored | `./data` |
 | `NODE_ENV` | `development` runs Vite dev server with HMR; `production` serves pre-built `dist/` | `development` |
 | `AUTH_TOKEN` | Optional bearer token. When set, all `/api` routes require `Authorization: Bearer <token>`. | _(disabled)_ |
+| `TAILSCALE` | Set to `0` or `false` to disable Tailscale entirely (no daemon, no socket wait). Required on Windows Docker Desktop. | `1` (enabled) |
 
 ### First Use
 
