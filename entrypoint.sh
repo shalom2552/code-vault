@@ -36,13 +36,13 @@ case "${TAILSCALE:-1}" in
                 until ! tailscale status | grep -q "Logged out"; do sleep 2; done
             fi
 
-            tailscale up --hostname=codevault --accept-dns=true
+            tailscale up --hostname=code-vault --accept-dns=true
 
             if [ -e /dev/net/tun ]; then
                 tailscale serve --https=443 off >/dev/null 2>&1
                 tailscale serve --bg http://localhost:5174
                 echo "-------------------------------------------------------"
-                echo "CodeVault HTTPS ready: https://codevault.<tailnet>.ts.net"
+                echo "CodeVault HTTPS ready: https://code-vault.<tailnet>.ts.net"
                 echo "-------------------------------------------------------"
             else
                 echo "-------------------------------------------------------"
