@@ -46,6 +46,7 @@ export default function App() {
   const [view, setView] = useState(VIEWS.LIST)
   const [selectedId, setSelectedId] = useState(null)
   const [playgroundSeed, setPlaygroundSeed] = useState(null)
+  const [listRefreshKey, setListRefreshKey] = useState(0)
   const [fontSize, setFontSize] = useState(() => {
     const stored = parseInt(localStorage.getItem('code-font-size'))
     return FONT_SIZES.includes(stored) ? stored : 14
@@ -58,6 +59,7 @@ export default function App() {
   }
 
   const goDetail = (id) => { setSelectedId(id); setTab(TABS.SNIPPETS); setView(VIEWS.DETAIL); setPlaygroundSeed(null) }
+  const goDetailAfterSave = (id) => { setListRefreshKey(k => k + 1); goDetail(id) }
   const goList = () => { setView(VIEWS.LIST); setPlaygroundSeed(null) }
   const goCreate = () => { setSelectedId(null); setView(VIEWS.CREATE) }
   const goEdit = () => setView(VIEWS.EDIT)
@@ -124,7 +126,7 @@ export default function App() {
               </button>
             </div>
           </div>
-          <ListView onSelect={goDetail} onCreate={goCreate} onEdit={goEditFromList} />
+          <ListView onSelect={goDetail} onCreate={goCreate} onEdit={goEditFromList} refreshKey={listRefreshKey} />
         </div>
 
         {isInEditor && (
@@ -146,16 +148,16 @@ export default function App() {
             {isSnippets && view === VIEWS.CREATE && (
               <EditorView
                 initialData={playgroundSeed}
-                onSave={goDetail}
+                onSave={goDetailAfterSave}
                 onBack={playgroundSeed ? goPlayground : goList}
                 fontSize={fontSize}
               />
             )}
             {isSnippets && view === VIEWS.EDIT && (
-              <EditorView snippetId={selectedId} onSave={goDetail} onBack={() => setView(VIEWS.DETAIL)} fontSize={fontSize} />
+              <EditorView snippetId={selectedId} onSave={goDetailAfterSave} onBack={() => setView(VIEWS.DETAIL)} fontSize={fontSize} />
             )}
             {isSnippets && view === VIEWS.EDIT_FROM_LIST && (
-              <EditorView snippetId={selectedId} onSave={goDetail} onBack={goList} fontSize={fontSize} />
+              <EditorView snippetId={selectedId} onSave={goDetailAfterSave} onBack={goList} fontSize={fontSize} />
             )}
             {isPlayground && <Playground onSaveAsSnippet={goCreateFromPlayground} fontSize={fontSize} cycleFont={cycleFont} />}
             {isSnippets && view === VIEWS.LIST && (

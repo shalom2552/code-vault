@@ -6,7 +6,7 @@ import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import { useToast } from '../components/ToastContext.jsx'
 
-export default function ListView({ onSelect, onCreate, onEdit }) {
+export default function ListView({ onSelect, onCreate, onEdit, refreshKey = 0 }) {
   const [snippets, setSnippets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -38,6 +38,9 @@ export default function ListView({ onSelect, onCreate, onEdit }) {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => load(), [load])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (refreshKey > 0) load(search) }, [refreshKey])
 
   useEffect(() => {
     const timer = setTimeout(() => load(search), 300)
