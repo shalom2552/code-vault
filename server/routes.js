@@ -302,6 +302,7 @@ export default function snippetRoutes(DATA_DIR) {
       return res.status(404).json({ error: 'Snippet not found' })
     }
 
+    if (!lang.runner) return res.status(405).json({ error: 'This language is not executable' })
     if (!srcFiles.length) return res.json({ stdout: '', stderr: `No ${lang.ext} files found`, exitCode: 1 })
 
     // P2: compile via spawn with argv array — no shell
@@ -347,6 +348,7 @@ export default function snippetRoutes(DATA_DIR) {
   router.post('/playground/run', runLimiter, async (req, res) => {
     const { code = '', stdin = '', language: langId } = req.body
     const lang = getLanguage(langId)
+    if (!lang.runner) return res.status(405).json({ error: 'This language is not executable' })
     const id = randomUUID()
     const tmpDir = `/tmp/playground-${id}`
     const srcFile = `${tmpDir}/${lang.srcFile}`

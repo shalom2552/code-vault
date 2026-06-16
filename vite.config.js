@@ -48,6 +48,9 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    dedupe: ['@codemirror/state', '@codemirror/view', '@codemirror/language'],
+  },
   server: {
     allowedHosts: true,
   },

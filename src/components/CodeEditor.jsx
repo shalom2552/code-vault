@@ -7,6 +7,7 @@ import { go } from '@codemirror/lang-go'
 import { rust } from '@codemirror/lang-rust'
 import { java } from '@codemirror/lang-java'
 import { php } from '@codemirror/lang-php'
+import { markdown } from '@codemirror/lang-markdown'
 import { StreamLanguage } from '@codemirror/language'
 import { shell } from '@codemirror/legacy-modes/mode/shell'
 import { ruby } from '@codemirror/legacy-modes/mode/ruby'
@@ -31,6 +32,7 @@ const RUST_EXT = rust()
 const JAVA_EXT = java()
 const PHP_EXT = php()
 const RUBY_EXT = StreamLanguage.define(ruby)
+const MARKDOWN_EXT = markdown()
 
 const BASE_EXTENSIONS = {
   cpp: [CPP_EXT],
@@ -44,6 +46,7 @@ const BASE_EXTENSIONS = {
   java: [JAVA_EXT],
   ruby: [RUBY_EXT],
   php: [PHP_EXT],
+  markdown: [MARKDOWN_EXT],
   text: [],
 }
 
@@ -59,6 +62,7 @@ const AUTO_HEIGHT_EXTENSIONS = {
   java: [JAVA_EXT, autoHeightTheme],
   ruby: [RUBY_EXT, autoHeightTheme],
   php: [PHP_EXT, autoHeightTheme],
+  markdown: [MARKDOWN_EXT, autoHeightTheme],
   text: [autoHeightTheme],
 }
 

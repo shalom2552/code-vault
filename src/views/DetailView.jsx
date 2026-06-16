@@ -5,6 +5,7 @@ import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
 import OutputPanel from '../components/OutputPanel.jsx'
 import { useToast } from '../components/ToastContext.jsx'
 import { api } from '../api.js'
+import { getLanguage, DEFAULT_LANGUAGE } from '../languages.js'
 
 function relativeTime(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -156,6 +157,7 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
 
   const file = snippet.files[activeFile]
   const runs = snippet.runs ?? []
+  const executable = getLanguage(snippet.language ?? DEFAULT_LANGUAGE).executable !== false
 
   return (
     <div className="detail-view">
@@ -238,25 +240,29 @@ export default function DetailView({ id, onBack, onEdit, onDeleted, fontSize = 1
         )}
       </div>
 
-      <OutputPanel
-        output={runOutput}
-        elapsed={elapsed}
-        running={running}
-        onClear={() => { setRunOutput(null); setElapsed(null) }}
-      />
-
-      <div className="run-footer">
-        <textarea
-          className="stdin-input playground-stdin"
-          placeholder="stdin (optional)"
-          value={stdin}
-          onChange={e => setStdin(e.target.value)}
-          rows={1}
+      {executable && (
+        <OutputPanel
+          output={runOutput}
+          elapsed={elapsed}
+          running={running}
+          onClear={() => { setRunOutput(null); setElapsed(null) }}
         />
-        <button className="playground-run-btn" onClick={handleRun} disabled={running}>
-          {running ? <span className="dancing-dots"><span /><span /><span /></span> : '▶ Run'}
-        </button>
-      </div>
+      )}
+
+      {executable && (
+        <div className="run-footer">
+          <textarea
+            className="stdin-input playground-stdin"
+            placeholder="stdin (optional)"
+            value={stdin}
+            onChange={e => setStdin(e.target.value)}
+            rows={1}
+          />
+          <button className="playground-run-btn" onClick={handleRun} disabled={running}>
+            {running ? <span className="dancing-dots"><span /><span /><span /></span> : '▶ Run'}
+          </button>
+        </div>
+      )}
 
       {confirming && (
         <ConfirmDialog

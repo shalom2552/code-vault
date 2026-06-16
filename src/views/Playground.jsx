@@ -77,6 +77,8 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }
     }
   }
 
+  const executable = LANGUAGES[language]?.executable !== false
+
   return (
     <div className="playground">
       <div className="playground-header">
@@ -100,26 +102,32 @@ export default function Playground({ onSaveAsSnippet, fontSize = 14, cycleFont }
       </div>
       {error && <div className="error-banner">{error}</div>}
       <div className="playground-code">
-        <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" fontSize={fontSize} onCtrlEnter={handleRun} />
+        <CodeEditor value={code} onChange={saveCode} language={language} minHeight="100%" fontSize={fontSize} onCtrlEnter={executable ? handleRun : undefined} />
       </div>
 
-      <OutputPanel
-        output={output}
-        elapsed={elapsed}
-        running={running}
-        onClear={() => { setOutput(null); setElapsed(null) }}
-      />
-      <div className="playground-footer">
-        <textarea
-          className="stdin-input playground-stdin"
-          placeholder="stdin (optional)"
-          value={stdin}
-          onChange={e => setStdin(e.target.value)}
-          rows={1}
+      {executable && (
+        <OutputPanel
+          output={output}
+          elapsed={elapsed}
+          running={running}
+          onClear={() => { setOutput(null); setElapsed(null) }}
         />
-        <button className="playground-run-btn" onClick={handleRun} disabled={running}>
-          {running ? <span className="dancing-dots"><span /><span /><span /></span> : '▶ Run'}
-        </button>
+      )}
+      <div className="playground-footer">
+        {executable && (
+          <textarea
+            className="stdin-input playground-stdin"
+            placeholder="stdin (optional)"
+            value={stdin}
+            onChange={e => setStdin(e.target.value)}
+            rows={1}
+          />
+        )}
+        {executable && (
+          <button className="playground-run-btn" onClick={handleRun} disabled={running}>
+            {running ? <span className="dancing-dots"><span /><span /><span /></span> : '▶ Run'}
+          </button>
+        )}
         <button
           className="playground-save-btn"
           onClick={() => onSaveAsSnippet(code, language)}

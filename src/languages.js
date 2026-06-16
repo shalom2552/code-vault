@@ -65,6 +65,13 @@ export const LANGUAGES = {
     hljsLang: 'php',
     playgroundDefault: '<?php\necho "Hello, World!\\n";\n',
   },
+  markdown: {
+    label: 'Markdown',
+    defaultFile: 'prompt.md',
+    hljsLang: 'markdown',
+    playgroundDefault: '# Prompt\n\n',
+    executable: false,
+  },
 }
 
 export const DEFAULT_LANGUAGE = 'cpp'

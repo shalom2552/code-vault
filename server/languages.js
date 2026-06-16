@@ -102,6 +102,13 @@ export const LANGUAGES = {
     runner: (_bin, srcFiles) => ['php83', srcFiles[0]],
     playgroundWrap: (code) => code,
   },
+  markdown: {
+    ext: '.md',
+    srcFile: 'prompt.md',
+    compile: null,
+    runner: null,
+    playgroundWrap: (code) => code,
+  },
 }
 
 export const DEFAULT_LANGUAGE = 'cpp'

@@ -12,7 +12,7 @@ describe('server language registry', () => {
       expect(typeof lang.ext).toBe('string')
       expect(typeof lang.srcFile).toBe('string')
       expect(lang.compile === null || typeof lang.compile === 'function').toBe(true)
-      expect(typeof lang.runner).toBe('function')
+      expect(lang.runner === null || typeof lang.runner === 'function').toBe(true)
       expect(typeof lang.playgroundWrap).toBe('function')
     })
   })
